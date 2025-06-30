@@ -400,7 +400,7 @@ render();
 class FemiVoice {
     constructor() {
         // Your Replit WebSocket URL - CHANGE THIS!
-        this.wsUrl = 'wss://https://triangular-poor-emulators-ayooluwa2.replit.app/media-stream';
+        this.wsUrl = 'wss://triangular-poor-emulators-ayooluwa2.replit.app/media-stream';
         this.ws = null;
         this.recorder = null;
         this.connected = false;
