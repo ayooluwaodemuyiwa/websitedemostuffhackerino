@@ -477,23 +477,27 @@ document.addEventListener('DOMContentLoaded', function() {
             this.showDemoFeedback('accent');
         }
 
-        handleVoiceAgentDemo(agent) {
-            console.log(`${agent.charAt(0).toUpperCase() + agent.slice(1)} voice agent demo clicked`);
-            
-            const widget = this.widgets[agent];
-            if (widget) {
-                if (this.isConversationActive[agent]) {
-                    // End current conversation
-                    widget.endConversation();
-                } else {
-                    // Start new conversation
-                    widget.startConversation();
-                }
-            } else {
-                console.warn(`${agent} widget not yet available`);
-                this.showDemoFeedback('loading');
-            }
+handleVoiceAgentDemo(agent) {
+    console.log(`${agent.charAt(0).toUpperCase() + agent.slice(1)} voice agent demo clicked`);
+    
+    const widget = this.widgets[agent];
+    if (widget && widget.shadowRoot) {
+        const startBtn = widget.shadowRoot.querySelector('button');
+        const endBtn = widget.shadowRoot.querySelector('button[aria-label="End conversation"]');
+
+        if (this.isConversationActive[agent] && endBtn) {
+            endBtn.click();
+        } else if (startBtn) {
+            startBtn.click();
+        } else {
+            this.showDemoFeedback('loading');
         }
+    } else {
+        console.warn(`${agent} widget not yet available`);
+        this.showDemoFeedback('loading');
+    }
+}
+
 
         updateButtonState(agent, isActive) {
             const playButtons = document.querySelectorAll('.play-button');
