@@ -507,12 +507,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             downsampledData[i] = inputData[i * downsampleRatio];
                         }
                         
-                        // Convert Float32 to 16-bit PCM
+                        // Optional: Normalize amplitude for consistent levels
+                        let max = Math.max(...downsampledData.map(Math.abs)) || 1;
+                        const gain = Math.min(1, 0.9 / max); // Cap at 90% to prevent clipping
+                        
+                        // Convert Float32 to 16-bit PCM with proper rounding and clamping
                         const pcmData = new Int16Array(outputLength);
                         for (let i = 0; i < outputLength; i++) {
-                            // Clamp and convert to 16-bit signed
-                            const sample = Math.max(-1, Math.min(1, downsampledData[i]));
-                            pcmData[i] = sample * 32767;
+                            // Apply gain and clamp to [-1, 1]
+                            const sample = Math.max(-1, Math.min(1, downsampledData[i] * gain));
+                            // Round to nearest integer to prevent float errors
+                            pcmData[i] = Math.round(sample * 32767);
                         }
 
                         // Send raw PCM to backend - let Python handle μ-law conversion
@@ -528,13 +533,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         };
 
                         this.ws.send(JSON.stringify(message));
-                        console.log('📤 Sent raw PCM:', outputLength, 'samples @8kHz');
+                        console.log('📤 Sent normalized PCM:', outputLength, 'samples @8kHz, gain:', gain.toFixed(3));
                     }
                 };
 
-                // Connect the audio processing chain
+                // Connect the audio processing chain (silent - no self-monitoring)
                 this.microphone.connect(this.processor);
-                this.processor.connect(this.tempAudioContext.destination);
+                this.processor.connect(this.tempAudioContext.createGain()); // Silent sink - no echo
 
                 console.log('✅ Raw PCM microphone active - speak to Femi');
 
