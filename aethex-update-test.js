@@ -1,67 +1,4 @@
-// Wait for DOM to be fully loaded before executing any code
-document.addEventListener('DOMContentLoaded', function() {
-
-// Create floating particles
-const particlesContainer = document.getElementById('particles');
-if (particlesContainer) {
-    const particleCount = 30;
-
-    for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.animationDelay = Math.random() * 15 + 's';
-        particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-        particlesContainer.appendChild(particle);
-    }
-}
-
-// Smooth scroll for navigation
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
-// Navbar background on scroll
-window.addEventListener('scroll', () => {
-    const nav = document.querySelector('nav');
-    const navButton = document.querySelector('.nav-buttons .btn.btn-secondary');
-    
-    if (nav) {
-        if (window.scrollY > 50) {
-            nav.style.background = 'rgba(0, 0, 0, 0.4)';
-            nav.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
-            if (navButton) {
-                navButton.style.color = 'white';
-                navButton.style.borderColor = 'white';
-            }
-        } else {
-            nav.style.background = 'rgba(0, 0, 0, 0.75)';
-            nav.style.boxShadow = 'none';
-        }
-    }
-});
-
-// Pause team scroll on hover - EXACTLY like your original working code
-const teamScroll = document.querySelector('.team-scroll');
-if (teamScroll) {
-    teamScroll.addEventListener('mouseenter', () => {
-        teamScroll.style.animationPlayState = 'paused';
-    });
-    teamScroll.addEventListener('mouseleave', () => {
-        teamScroll.style.animationPlayState = 'running';
-    });
-}
-
-// Noise module (self-contained)
+// Define noise module globally first
 (function (global) {
     var module = global.noise = {};
 
@@ -305,254 +242,317 @@ if (teamScroll) {
 
 })(this);
 
-// Canvas animation - EXACTLY like your original working code but with safety
-const canvas = document.getElementById("canvas");
-if (canvas) {
-    var w = window.innerWidth;
-    var h = window.innerHeight;
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
 
-    var ctx = canvas.getContext("2d");
-    ctx.canvas.width = w;
-    ctx.canvas.height = h;
+    // Create floating particles
+    const particlesContainer = document.getElementById('particles');
+    if (particlesContainer) {
+        const particleCount = 30;
 
-    var start = performance.now();
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+    }
 
-    window.onresize = function () {
-        w = window.innerWidth;
-        h = window.innerHeight;
+    // Smooth scroll for navigation
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Navbar background on scroll
+    window.addEventListener('scroll', () => {
+        const nav = document.querySelector('nav');
+        const navButton = document.querySelector('.nav-buttons .btn.btn-secondary');
+        
+        if (nav) {
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(0, 0, 0, 0.4)';
+                nav.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
+                if (navButton) {
+                    navButton.style.color = 'white';
+                    navButton.style.borderColor = 'white';
+                }
+            } else {
+                nav.style.background = 'rgba(0, 0, 0, 0.75)';
+                nav.style.boxShadow = 'none';
+            }
+        }
+    });
+
+    // Pause team scroll on hover
+    const teamScroll = document.querySelector('.team-scroll');
+    if (teamScroll) {
+        teamScroll.addEventListener('mouseenter', () => {
+            teamScroll.style.animationPlayState = 'paused';
+        });
+        teamScroll.addEventListener('mouseleave', () => {
+            teamScroll.style.animationPlayState = 'running';
+        });
+    }
+
+    // Canvas animation - Enhanced version with both sine wave and dots
+    const canvas = document.getElementById("canvas");
+    if (canvas) {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+
+        var ctx = canvas.getContext("2d");
         ctx.canvas.width = w;
         ctx.canvas.height = h;
-    };
 
-    function drawSine(time, angular_freq) {
-        ctx.beginPath();
-        ctx.strokeStyle = "rgba(46, 151, 157, 1)";
+        var start = performance.now();
 
-        var elapsed = (time - start) / 1000;
-        var phase_angle = elapsed * 2;
+        window.onresize = function () {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            ctx.canvas.width = w;
+            ctx.canvas.height = h;
+        };
 
-        var x, y, amplitude;
-        for (x = 0; x < w; x++) {
-            amplitude = noise.perlin2(x / 100, elapsed) * 200;
-            amplitude *= Math.sin(x * 2) * 3;
-            y = amplitude * Math.sin(x * angular_freq + phase_angle);
-            ctx.lineTo(x, y + h / 2);
-        }
+        function drawSine(time, angular_freq) {
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(46, 151, 157, 1)";
 
-        ctx.stroke();
-        ctx.closePath();
-    }
+            var elapsed = (time - start) / 1000;
+            var phase_angle = elapsed * 2;
 
-    function drawDots(time) {
-        var elapsed = (time - start) / 1000;
-        var dotSize = 3;
-        var spacing = 20;
-        
-        ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
-        
-        for (var x = 0; x < w; x += spacing) {
-            for (var y = 0; y < h; y += spacing) {
-                var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
-                var alpha = Math.abs(noiseValue);
-                var size = dotSize + (noiseValue * 2);
-                
-                if (alpha > 0.3) {
-                    ctx.globalAlpha = alpha;
-                    ctx.beginPath();
-                    ctx.arc(x, y, size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-        }
-        ctx.globalAlpha = 1;
-    }
-
-    function render(time) {
-        // clear screen
-        ctx.fillStyle = "rgba(0, 0, 0, 1)";
-        ctx.fillRect(0, 0, w, h);
-        
-        // Draw animated dots
-        drawDots(time);
-        
-        // Draw sine wave
-        drawSine(time, 10);
-        
-        requestAnimationFrame(render);
-    }
-
-    //----------------------------------------------------------------------------
-    noise.seed(Math.random());
-    render();
-}
-
-// Femi Voice Integration - EXACTLY like your original working code but with safety
-class FemiVoice {
-    constructor() {
-        this.wsUrl = 'wss://triangular-poor-emulators-ayooluwa2.replit.app/media-stream';
-        this.ws = null;
-        this.recorder = null;
-        this.connected = false;
-
-        // Find your existing Femi button
-        this.button = document.querySelector('.demo-card .play-button');
-        if (this.button) {
-            this.init();
-        }
-    }
-
-    init() {
-        // Add click handler to your existing button
-        this.button.addEventListener('click', () => this.toggle());
-    }
-
-    async toggle() {
-        if (this.connected) {
-            this.stop();
-        } else {
-            await this.start();
-        }
-    }
-
-    async start() {
-        try {
-            console.log('Connecting to Femi...');
-
-            // Connect to your Replit backend
-            this.ws = new WebSocket(this.wsUrl);
-
-            this.ws.onopen = () => {
-                console.log('Connected to Femi');
-                this.connected = true;
-                this.startMicrophone();
-            };
-
-            this.ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.event === 'media') {
-                    this.playAudio(data.media.payload);
-                }
-            };
-
-            this.ws.onclose = () => {
-                console.log('Disconnected from Femi');
-                this.cleanup();
-            };
-
-            this.ws.onerror = () => {
-                console.error('Connection failed');
-                this.cleanup();
-            };
-
-        } catch (error) {
-            console.error('Failed to start call:', error);
-            this.cleanup();
-        }
-    }
-
-    async startMicrophone() {
-        try {
-            // Get microphone access
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    sampleRate: 8000,
-                    channelCount: 1
-                }
-            });
-
-            // Start recording
-            this.recorder = new MediaRecorder(stream);
-            this.recorder.ondataavailable = (event) => {
-                if (event.data.size > 0 && this.connected) {
-                    this.sendAudio(event.data);
-                }
-            };
-            this.recorder.start(20); // 20ms chunks
-
-            console.log('Microphone active - speak to Femi');
-
-        } catch (error) {
-            console.error('Microphone access failed:', error);
-            this.cleanup();
-        }
-    }
-
-    async sendAudio(audioBlob) {
-        try {
-            const arrayBuffer = await audioBlob.arrayBuffer();
-            const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-
-            // Send audio to your backend in the format it expects
-            const message = {
-                event: "media",
-                media: {
-                    payload: base64Audio
-                }
-            };
-
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                this.ws.send(JSON.stringify(message));
+            var x, y, amplitude;
+            for (x = 0; x < w; x++) {
+                amplitude = noise.perlin2(x / 100, elapsed) * 200;
+                amplitude *= Math.sin(x * 2) * 3;
+                y = amplitude * Math.sin(x * angular_freq + phase_angle);
+                ctx.lineTo(x, y + h / 2);
             }
 
-        } catch (error) {
-            console.error('Audio sending error:', error);
+            ctx.stroke();
+            ctx.closePath();
         }
-    }
 
-    async playAudio(base64Audio) {
-        try {
-            console.log('Femi is speaking...');
-
-            // Decode and play audio from backend
-            const audioData = atob(base64Audio);
-            const audioArray = new Uint8Array(audioData.length);
-            for (let i = 0; i < audioData.length; i++) {
-                audioArray[i] = audioData.charCodeAt(i);
+        function drawDots(time) {
+            var elapsed = (time - start) / 1000;
+            var dotSize = 3;
+            var spacing = 20;
+            
+            ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
+            
+            for (var x = 0; x < w; x += spacing) {
+                for (var y = 0; y < h; y += spacing) {
+                    var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
+                    var alpha = Math.abs(noiseValue);
+                    var size = dotSize + (noiseValue * 2);
+                    
+                    if (alpha > 0.3) {
+                        ctx.globalAlpha = alpha;
+                        ctx.beginPath();
+                        ctx.arc(x, y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
             }
-
-            const audioBlob = new Blob([audioArray], { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-
-            audio.onended = () => {
-                console.log('Femi finished speaking');
-                URL.revokeObjectURL(audioUrl);
-            };
-
-            await audio.play();
-
-        } catch (error) {
-            console.error('Audio playback error:', error);
+            ctx.globalAlpha = 1;
         }
+
+        function render(time) {
+            // clear screen
+            ctx.fillStyle = "rgba(0, 0, 0, 1)";
+            ctx.fillRect(0, 0, w, h);
+            
+            // Draw animated dots
+            drawDots(time);
+            
+            // Draw sine wave
+            drawSine(time, 10);
+            
+            requestAnimationFrame(render);
+        }
+
+        // Initialize noise and start rendering
+        noise.seed(Math.random());
+        render();
     }
 
-    stop() {
-        console.log('Ending call with Femi');
-        this.cleanup();
-    }
-
-    cleanup() {
-        this.connected = false;
-
-        // Close WebSocket
-        if (this.ws) {
-            this.ws.close();
+    // Femi Voice Integration
+    class FemiVoice {
+        constructor() {
+            this.wsUrl = 'wss://triangular-poor-emulators-ayooluwa2.replit.app/media-stream';
             this.ws = null;
+            this.recorder = null;
+            this.connected = false;
+
+            // Find your existing Femi button
+            this.button = document.querySelector('.demo-card .play-button');
+            if (this.button) {
+                this.init();
+            }
         }
 
-        // Stop recording
-        if (this.recorder && this.recorder.state !== 'inactive') {
-            this.recorder.stop();
-            this.recorder.stream.getTracks().forEach(track => track.stop());
-            this.recorder = null;
+        init() {
+            // Add click handler to your existing button
+            this.button.addEventListener('click', () => this.toggle());
+        }
+
+        async toggle() {
+            if (this.connected) {
+                this.stop();
+            } else {
+                await this.start();
+            }
+        }
+
+        async start() {
+            try {
+                console.log('Connecting to Femi...');
+
+                // Connect to your Replit backend
+                this.ws = new WebSocket(this.wsUrl);
+
+                this.ws.onopen = () => {
+                    console.log('Connected to Femi');
+                    this.connected = true;
+                    this.startMicrophone();
+                };
+
+                this.ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.event === 'media') {
+                        this.playAudio(data.media.payload);
+                    }
+                };
+
+                this.ws.onclose = () => {
+                    console.log('Disconnected from Femi');
+                    this.cleanup();
+                };
+
+                this.ws.onerror = () => {
+                    console.error('Connection failed');
+                    this.cleanup();
+                };
+
+            } catch (error) {
+                console.error('Failed to start call:', error);
+                this.cleanup();
+            }
+        }
+
+        async startMicrophone() {
+            try {
+                // Get microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        sampleRate: 8000,
+                        channelCount: 1
+                    }
+                });
+
+                // Start recording
+                this.recorder = new MediaRecorder(stream);
+                this.recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && this.connected) {
+                        this.sendAudio(event.data);
+                    }
+                };
+                this.recorder.start(20); // 20ms chunks
+
+                console.log('Microphone active - speak to Femi');
+
+            } catch (error) {
+                console.error('Microphone access failed:', error);
+                this.cleanup();
+            }
+        }
+
+        async sendAudio(audioBlob) {
+            try {
+                const arrayBuffer = await audioBlob.arrayBuffer();
+                const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
+                // Send audio to your backend in the format it expects
+                const message = {
+                    event: "media",
+                    media: {
+                        payload: base64Audio
+                    }
+                };
+
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify(message));
+                }
+
+            } catch (error) {
+                console.error('Audio sending error:', error);
+            }
+        }
+
+        async playAudio(base64Audio) {
+            try {
+                console.log('Femi is speaking...');
+
+                // Decode and play audio from backend
+                const audioData = atob(base64Audio);
+                const audioArray = new Uint8Array(audioData.length);
+                for (let i = 0; i < audioData.length; i++) {
+                    audioArray[i] = audioData.charCodeAt(i);
+                }
+
+                const audioBlob = new Blob([audioArray], { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+
+                audio.onended = () => {
+                    console.log('Femi finished speaking');
+                    URL.revokeObjectURL(audioUrl);
+                };
+
+                await audio.play();
+
+            } catch (error) {
+                console.error('Audio playback error:', error);
+            }
+        }
+
+        stop() {
+            console.log('Ending call with Femi');
+            this.cleanup();
+        }
+
+        cleanup() {
+            this.connected = false;
+
+            // Close WebSocket
+            if (this.ws) {
+                this.ws.close();
+                this.ws = null;
+            }
+
+            // Stop recording
+            if (this.recorder && this.recorder.state !== 'inactive') {
+                this.recorder.stop();
+                this.recorder.stream.getTracks().forEach(track => track.stop());
+                this.recorder = null;
+            }
         }
     }
-}
 
-// Initialize Femi Voice when page loads
-setTimeout(() => {
-    window.femiVoice = new FemiVoice();
-    console.log('Femi voice integration ready');
-}, 1000);
+    // Initialize Femi Voice when page loads
+    setTimeout(() => {
+        window.femiVoice = new FemiVoice();
+        console.log('Femi voice integration ready');
+    }, 1000);
 
-}); // End of DOMContentLoaded
+});
