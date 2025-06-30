@@ -470,12 +470,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async startMicrophone() {
             try {
-                console.log('Starting high-quality microphone...');
+                console.log('🎤 Starting raw PCM microphone...');
                 
-                // Get high-quality microphone access for better upsampling
+                // Get high-quality microphone access
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
-                        sampleRate: 44100,  // High quality input
+                        sampleRate: 48000,  // High quality input
                         channelCount: 1,
                         echoCancellation: true,
                         noiseSuppression: false,  
@@ -483,26 +483,63 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
 
-                // Use MediaRecorder with better quality settings
-                const options = {
-                    mimeType: 'audio/webm;codecs=opus',
-                    audioBitsPerSecond: 32000  // Higher bitrate
-                };
+                // Create audio context for raw PCM processing
+                this.tempAudioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: 48000
+                });
 
-                this.recorder = new MediaRecorder(stream, options);
+                this.microphone = this.tempAudioContext.createMediaStreamSource(stream);
                 
-                this.recorder.ondataavailable = async (event) => {
-                    if (event.data.size > 0 && this.connected) {
-                        await this.sendCleanAudio(event.data);
+                // Create script processor for raw PCM - 2048 samples = ~43ms at 48kHz
+                this.processor = this.tempAudioContext.createScriptProcessor(2048, 1, 1);
+                
+                this.processor.onaudioprocess = (event) => {
+                    if (this.connected && this.ws.readyState === WebSocket.OPEN) {
+                        const inputBuffer = event.inputBuffer;
+                        const inputData = inputBuffer.getChannelData(0); // Raw Float32 PCM
+                        
+                        // Downsample 48kHz → 8kHz using simple decimation
+                        const downsampleRatio = 6; // 48000 / 8000 = 6
+                        const outputLength = Math.floor(inputData.length / downsampleRatio);
+                        const downsampledData = new Float32Array(outputLength);
+                        
+                        for (let i = 0; i < outputLength; i++) {
+                            downsampledData[i] = inputData[i * downsampleRatio];
+                        }
+                        
+                        // Convert Float32 to 16-bit PCM
+                        const pcmData = new Int16Array(outputLength);
+                        for (let i = 0; i < outputLength; i++) {
+                            // Clamp and convert to 16-bit signed
+                            const sample = Math.max(-1, Math.min(1, downsampledData[i]));
+                            pcmData[i] = sample * 32767;
+                        }
+
+                        // Send raw PCM to backend - let Python handle μ-law conversion
+                        const pcmBytes = new Uint8Array(pcmData.buffer);
+                        const base64Audio = btoa(String.fromCharCode(...pcmBytes));
+                        
+                        const message = {
+                            event: "media",
+                            streamSid: this.streamSid,
+                            media: {
+                                payload: base64Audio
+                            }
+                        };
+
+                        this.ws.send(JSON.stringify(message));
+                        console.log('📤 Sent raw PCM:', outputLength, 'samples @8kHz');
                     }
                 };
 
-                // Send audio chunks every 200ms for better quality
-                this.recorder.start(200);
-                console.log('High-quality microphone active - speak to Femi');
+                // Connect the audio processing chain
+                this.microphone.connect(this.processor);
+                this.processor.connect(this.tempAudioContext.destination);
+
+                console.log('✅ Raw PCM microphone active - speak to Femi');
 
             } catch (error) {
-                console.error('Microphone access failed:', error);
+                console.error('❌ Microphone access failed:', error);
                 this.cleanup();
             }
         }
@@ -704,10 +741,10 @@ document.addEventListener('DOMContentLoaded', function() {
             writeString(36, 'data');
             view.setUint32(40, length * 2, true);
             
-            // PCM data
+            // PCM data - fixed the variable name
             let offset = 44;
             for (let i = 0; i < length; i++) {
-                view.setInt16(offset, pcmArray[i], true);
+                view.setInt16(offset, pcmData[i], true);  // Fixed: was pcmArray[i]
                 offset += 2;
             }
             
