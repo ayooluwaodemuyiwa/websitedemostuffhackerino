@@ -470,23 +470,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async startMicrophone() {
             try {
-                console.log('Starting clean microphone...');
+                console.log('Starting high-quality microphone...');
                 
-                // Get clean, high-quality microphone access
+                // Get high-quality microphone access for better upsampling
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
-                        sampleRate: 16000,  // Good quality but not too high
+                        sampleRate: 44100,  // High quality input
                         channelCount: 1,
                         echoCancellation: true,
-                        noiseSuppression: false,  // Turn off - might be causing issues
-                        autoGainControl: false    // Turn off - might be causing issues
+                        noiseSuppression: false,  
+                        autoGainControl: false    
                     }
                 });
 
-                // Use MediaRecorder - much simpler and cleaner
+                // Use MediaRecorder with better quality settings
                 const options = {
                     mimeType: 'audio/webm;codecs=opus',
-                    audioBitsPerSecond: 16000
+                    audioBitsPerSecond: 32000  // Higher bitrate
                 };
 
                 this.recorder = new MediaRecorder(stream, options);
@@ -497,9 +497,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 };
 
-                // Send audio chunks every 100ms
-                this.recorder.start(100);
-                console.log('Microphone active - speak to Femi (clean audio mode)');
+                // Send audio chunks every 200ms for better quality
+                this.recorder.start(200);
+                console.log('High-quality microphone active - speak to Femi');
 
             } catch (error) {
                 console.error('Microphone access failed:', error);
@@ -523,20 +523,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Get the raw audio data
                 const channelData = audioBuffer.getChannelData(0);
                 
-                // Resample to 8kHz for backend
-                const resampledData = this.simpleResample(channelData, audioBuffer.sampleRate, 8000);
+                // Resample to 8kHz but keep high quality through the process
+                const resampledData = this.highQualityResample(channelData, audioBuffer.sampleRate, 8000);
                 
                 // Convert to 16-bit PCM
                 const pcmData = new Int16Array(resampledData.length);
                 for (let i = 0; i < resampledData.length; i++) {
-                    // Simple conversion, no fancy processing
                     pcmData[i] = Math.max(-32768, Math.min(32767, resampledData[i] * 32767));
                 }
 
                 // Convert to μ-law
                 const mulawData = this.simpleMulaw(pcmData);
-                
-                // Encode to base64
                 const base64Audio = btoa(String.fromCharCode(...mulawData));
                 
                 // Send to backend
@@ -549,11 +546,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
 
                 this.ws.send(JSON.stringify(message));
-                console.log('📤 Sent clean audio chunk:', resampledData.length, 'samples');
+                console.log('📤 Sent HQ audio chunk:', resampledData.length, 'samples');
 
             } catch (error) {
                 console.error('Clean audio sending error:', error);
             }
+        }
+
+        // Better resampling that preserves quality for upsampling
+        highQualityResample(inputData, inputRate, outputRate) {
+            const ratio = inputRate / outputRate;
+            const outputLength = Math.floor(inputData.length / ratio);
+            const outputData = new Float32Array(outputLength);
+            
+            // Use simple decimation for downsampling (better for upsampling later)
+            for (let i = 0; i < outputLength; i++) {
+                const inputIndex = Math.floor(i * ratio);
+                outputData[i] = inputData[inputIndex];
+            }
+            
+            return outputData;
         }
 
         // Much simpler resampling
