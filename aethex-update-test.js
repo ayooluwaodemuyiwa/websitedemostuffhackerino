@@ -470,38 +470,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async startMicrophone() {
             try {
-                // Get microphone access with specific constraints
+                // Get microphone access with high quality settings
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
-                        sampleRate: 8000,
+                        sampleRate: 48000,  // Start with high quality
                         channelCount: 1,
                         echoCancellation: true,
-                        noiseSuppression: true
+                        noiseSuppression: true,
+                        autoGainControl: true
                     }
                 });
 
                 // Create audio context for processing
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-                    sampleRate: 8000
+                    sampleRate: 48000  // High quality processing
                 });
 
                 this.microphone = this.audioContext.createMediaStreamSource(stream);
                 
                 // Create script processor for audio processing
-                this.processor = this.audioContext.createScriptProcessor(1024, 1, 1);
+                this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);  // Larger buffer
                 
                 this.processor.onaudioprocess = (event) => {
                     if (this.connected && this.ws.readyState === WebSocket.OPEN) {
                         const inputBuffer = event.inputBuffer;
                         const inputData = inputBuffer.getChannelData(0);
                         
+                        // Downsample to 8kHz for backend
+                        const downsampledData = this.downsampleTo8kHz(inputData, 48000);
+                        
                         // Convert float32 to 16-bit PCM
-                        const pcmData = new Int16Array(inputData.length);
-                        for (let i = 0; i < inputData.length; i++) {
-                            pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+                        const pcmData = new Int16Array(downsampledData.length);
+                        for (let i = 0; i < downsampledData.length; i++) {
+                            // Apply gentle compression to avoid clipping
+                            let sample = Math.max(-1, Math.min(1, downsampledData[i]));
+                            pcmData[i] = sample * 32767;
                         }
 
-                        // Convert to μ-law (simplified approximation)
+                        // Convert to μ-law
                         const mulawData = this.pcmToMulaw(pcmData);
                         
                         // Encode to base64
@@ -529,6 +535,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Microphone access failed:', error);
                 this.cleanup();
             }
+        }
+
+        // Better downsampling function
+        downsampleTo8kHz(inputData, inputSampleRate) {
+            const targetSampleRate = 8000;
+            const ratio = inputSampleRate / targetSampleRate;
+            const outputLength = Math.round(inputData.length / ratio);
+            const outputData = new Float32Array(outputLength);
+            
+            for (let i = 0; i < outputLength; i++) {
+                const sourceIndex = i * ratio;
+                const leftIndex = Math.floor(sourceIndex);
+                const rightIndex = Math.ceil(sourceIndex);
+                const fraction = sourceIndex - leftIndex;
+                
+                if (rightIndex < inputData.length) {
+                    // Linear interpolation for better quality
+                    outputData[i] = inputData[leftIndex] * (1 - fraction) + 
+                                   inputData[rightIndex] * fraction;
+                } else {
+                    outputData[i] = inputData[leftIndex];
+                }
+            }
+            
+            return outputData;
         }
 
         // Convert PCM to μ-law (simplified implementation)
@@ -569,7 +600,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const pcmArray = this.mulawToPcm(mulawArray);
                 
                 // Create WAV file from PCM data
-                const wavBuffer = this.createWavFile(pcmArray, 8000);
+                const wavBuffer = this.createWavFile(pcmArray, 22050);
                 const audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
                 const audioUrl = URL.createObjectURL(audioBlob);
                 
