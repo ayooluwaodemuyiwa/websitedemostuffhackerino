@@ -386,13 +386,16 @@ document.addEventListener('DOMContentLoaded', function() {
         render();
     }
 
-    // Femi Voice Integration
+    // Femi Voice Integration - Fixed for Twilio-compatible backend
     class FemiVoice {
         constructor() {
             this.wsUrl = 'wss://triangular-poor-emulators-ayooluwa2.replit.app/media-stream';
             this.ws = null;
-            this.recorder = null;
+            this.audioContext = null;
+            this.microphone = null;
+            this.processor = null;
             this.connected = false;
+            this.streamSid = 'browser-stream-' + Date.now();
 
             // Find your existing Femi button
             this.button = document.querySelector('.demo-card .play-button');
@@ -424,13 +427,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.ws.onopen = () => {
                     console.log('Connected to Femi');
                     this.connected = true;
+                    // Send start event like Twilio does
+                    this.ws.send(JSON.stringify({
+                        event: 'start',
+                        start: {
+                            streamSid: this.streamSid
+                        }
+                    }));
                     this.startMicrophone();
                 };
 
                 this.ws.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    if (data.event === 'media') {
-                        this.playAudio(data.media.payload);
+                    console.log('Received message from Femi:', event.data);
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('Parsed data:', data);
+                        if (data.event === 'media') {
+                            this.playAudio(data.media.payload);
+                        } else {
+                            console.log('Non-media event received:', data.event);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing message:', error);
                     }
                 };
 
@@ -439,8 +457,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.cleanup();
                 };
 
-                this.ws.onerror = () => {
-                    console.error('Connection failed');
+                this.ws.onerror = (error) => {
+                    console.error('Connection failed:', error);
                     this.cleanup();
                 };
 
@@ -452,22 +470,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async startMicrophone() {
             try {
-                // Get microphone access
+                // Get microphone access with specific constraints
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
                         sampleRate: 8000,
-                        channelCount: 1
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
                     }
                 });
 
-                // Start recording
-                this.recorder = new MediaRecorder(stream);
-                this.recorder.ondataavailable = (event) => {
-                    if (event.data.size > 0 && this.connected) {
-                        this.sendAudio(event.data);
+                // Create audio context for processing
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: 8000
+                });
+
+                this.microphone = this.audioContext.createMediaStreamSource(stream);
+                
+                // Create script processor for audio processing
+                this.processor = this.audioContext.createScriptProcessor(1024, 1, 1);
+                
+                this.processor.onaudioprocess = (event) => {
+                    if (this.connected && this.ws.readyState === WebSocket.OPEN) {
+                        const inputBuffer = event.inputBuffer;
+                        const inputData = inputBuffer.getChannelData(0);
+                        
+                        // Convert float32 to 16-bit PCM
+                        const pcmData = new Int16Array(inputData.length);
+                        for (let i = 0; i < inputData.length; i++) {
+                            pcmData[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+                        }
+
+                        // Convert to μ-law (simplified approximation)
+                        const mulawData = this.pcmToMulaw(pcmData);
+                        
+                        // Encode to base64
+                        const base64Audio = btoa(String.fromCharCode(...mulawData));
+                        
+                        // Send in Twilio format
+                        const message = {
+                            event: "media",
+                            streamSid: this.streamSid,
+                            media: {
+                                payload: base64Audio
+                            }
+                        };
+
+                        this.ws.send(JSON.stringify(message));
                     }
                 };
-                this.recorder.start(20); // 20ms chunks
+
+                this.microphone.connect(this.processor);
+                this.processor.connect(this.audioContext.destination);
 
                 console.log('Microphone active - speak to Femi');
 
@@ -477,48 +531,67 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        async sendAudio(audioBlob) {
-            try {
-                const arrayBuffer = await audioBlob.arrayBuffer();
-                const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-
-                // Send audio to your backend in the format it expects
-                const message = {
-                    event: "media",
-                    media: {
-                        payload: base64Audio
-                    }
-                };
-
-                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                    this.ws.send(JSON.stringify(message));
-                }
-
-            } catch (error) {
-                console.error('Audio sending error:', error);
+        // Convert PCM to μ-law (simplified implementation)
+        pcmToMulaw(pcmData) {
+            const mulawData = new Uint8Array(pcmData.length);
+            for (let i = 0; i < pcmData.length; i++) {
+                mulawData[i] = this.linearToMulaw(pcmData[i]);
             }
+            return mulawData;
+        }
+
+        linearToMulaw(sample) {
+            const MULAW_MAX = 0x1FFF;
+            const MULAW_BIAS = 33;
+            let sign = (sample >> 8) & 0x80;
+            if (sign != 0) sample = -sample;
+            if (sample > MULAW_MAX) sample = MULAW_MAX;
+            sample = sample + MULAW_BIAS;
+            let exponent = 7;
+            for (let expMask = 0x4000; (sample & expMask) == 0 && exponent > 0; exponent--, expMask >>= 1) {}
+            let mantissa = (sample >> (exponent + 3)) & 0x0F;
+            let mulawbyte = ~(sign | (exponent << 4) | mantissa);
+            return mulawbyte & 0xFF;
         }
 
         async playAudio(base64Audio) {
             try {
                 console.log('Femi is speaking...');
 
-                // Decode and play audio from backend
-                const audioData = atob(base64Audio);
-                const audioArray = new Uint8Array(audioData.length);
-                for (let i = 0; i < audioData.length; i++) {
-                    audioArray[i] = audioData.charCodeAt(i);
+                // Decode μ-law audio from backend
+                const mulawData = atob(base64Audio);
+                const mulawArray = new Uint8Array(mulawData.length);
+                for (let i = 0; i < mulawData.length; i++) {
+                    mulawArray[i] = mulawData.charCodeAt(i);
                 }
 
-                const audioBlob = new Blob([audioArray], { type: 'audio/wav' });
+                // Convert μ-law to PCM
+                const pcmArray = this.mulawToPcm(mulawArray);
+                
+                // Create WAV file from PCM data
+                const wavBuffer = this.createWavFile(pcmArray, 8000);
+                const audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
                 const audioUrl = URL.createObjectURL(audioBlob);
+                
+                // Use simple HTML5 audio for playback
                 const audio = new Audio(audioUrl);
-
+                audio.volume = 1.0;
+                
+                audio.onloadeddata = () => {
+                    console.log('Audio loaded, duration:', audio.duration);
+                };
+                
                 audio.onended = () => {
                     console.log('Femi finished speaking');
                     URL.revokeObjectURL(audioUrl);
                 };
+                
+                audio.onerror = (e) => {
+                    console.error('Audio playback error:', e);
+                    URL.revokeObjectURL(audioUrl);
+                };
 
+                // Play the audio
                 await audio.play();
 
             } catch (error) {
@@ -526,8 +599,74 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Create a proper WAV file from PCM data
+        createWavFile(pcmData, sampleRate) {
+            const length = pcmData.length;
+            const buffer = new ArrayBuffer(44 + length * 2);
+            const view = new DataView(buffer);
+            
+            // WAV file header
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, length * 2, true);
+            
+            // PCM data
+            let offset = 44;
+            for (let i = 0; i < length; i++) {
+                view.setInt16(offset, pcmArray[i], true);
+                offset += 2;
+            }
+            
+            return buffer;
+        }
+
+        // Convert μ-law to PCM
+        mulawToPcm(mulawData) {
+            const pcmData = new Int16Array(mulawData.length);
+            for (let i = 0; i < mulawData.length; i++) {
+                pcmData[i] = this.mulawToLinear(mulawData[i]);
+            }
+            return pcmData;
+        }
+
+        mulawToLinear(mulawbyte) {
+            mulawbyte = ~mulawbyte;
+            let sign = (mulawbyte & 0x80);
+            let exponent = (mulawbyte >> 4) & 0x07;
+            let mantissa = mulawbyte & 0x0F;
+            let sample = mantissa << (exponent + 3);
+            sample += (0x84 << exponent);
+            if (sign != 0) sample = -sample;
+            return sample;
+        }
+
         stop() {
             console.log('Ending call with Femi');
+            
+            // Send stop event
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                    event: 'stop',
+                    streamSid: this.streamSid
+                }));
+            }
+            
             this.cleanup();
         }
 
@@ -540,11 +679,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.ws = null;
             }
 
-            // Stop recording
-            if (this.recorder && this.recorder.state !== 'inactive') {
-                this.recorder.stop();
-                this.recorder.stream.getTracks().forEach(track => track.stop());
-                this.recorder = null;
+            // Stop audio processing
+            if (this.processor) {
+                this.processor.disconnect();
+                this.processor = null;
+            }
+            
+            if (this.microphone) {
+                this.microphone.disconnect();
+                this.microphone = null;
+            }
+
+            if (this.audioContext) {
+                this.audioContext.close();
+                this.audioContext = null;
             }
         }
     }
