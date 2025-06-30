@@ -470,7 +470,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async startMicrophone() {
             try {
-                console.log('🎤 Starting raw PCM microphone...');
+                console.log('🎤 Starting high-quality PCM microphone...');
                 
                 // Get high-quality microphone access
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -490,37 +490,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 this.microphone = this.tempAudioContext.createMediaStreamSource(stream);
                 
-                // Create script processor for raw PCM - 2048 samples = ~43ms at 48kHz
-                this.processor = this.tempAudioContext.createScriptProcessor(2048, 1, 1);
+                // Use larger buffer for better quality - 4096 samples = ~85ms at 48kHz
+                this.processor = this.tempAudioContext.createScriptProcessor(4096, 1, 1);
                 
                 this.processor.onaudioprocess = (event) => {
                     if (this.connected && this.ws.readyState === WebSocket.OPEN) {
                         const inputBuffer = event.inputBuffer;
                         const inputData = inputBuffer.getChannelData(0); // Raw Float32 PCM
                         
-                        // Downsample 48kHz → 8kHz using simple decimation
-                        const downsampleRatio = 6; // 48000 / 8000 = 6
-                        const outputLength = Math.floor(inputData.length / downsampleRatio);
-                        const downsampledData = new Float32Array(outputLength);
+                        // High-quality resampling 48kHz → 8kHz using linear interpolation
+                        const downsampledData = this.resampleLinear(inputData, 48000, 8000);
                         
-                        for (let i = 0; i < outputLength; i++) {
-                            downsampledData[i] = inputData[i * downsampleRatio];
-                        }
-                        
-                        // Optional: Normalize amplitude for consistent levels
+                        // Conservative gain normalization (only boost quiet audio)
                         let max = Math.max(...downsampledData.map(Math.abs)) || 1;
-                        const gain = Math.min(1, 0.9 / max); // Cap at 90% to prevent clipping
+                        const gain = max < 0.1 ? Math.min(2.0, 0.5 / max) : 1.0; // Only boost if very quiet
                         
                         // Convert Float32 to 16-bit PCM with proper rounding and clamping
-                        const pcmData = new Int16Array(outputLength);
-                        for (let i = 0; i < outputLength; i++) {
-                            // Apply gain and clamp to [-1, 1]
+                        const pcmData = new Int16Array(downsampledData.length);
+                        for (let i = 0; i < downsampledData.length; i++) {
+                            // Apply conservative gain and clamp to [-1, 1]
                             const sample = Math.max(-1, Math.min(1, downsampledData[i] * gain));
                             // Round to nearest integer to prevent float errors
                             pcmData[i] = Math.round(sample * 32767);
                         }
 
-                        // Send raw PCM to backend - let Python handle μ-law conversion
+                        // Send raw PCM to backend - let Python handle μ-law conversion properly
                         const pcmBytes = new Uint8Array(pcmData.buffer);
                         const base64Audio = btoa(String.fromCharCode(...pcmBytes));
                         
@@ -533,7 +527,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         };
 
                         this.ws.send(JSON.stringify(message));
-                        console.log('📤 Sent normalized PCM:', outputLength, 'samples @8kHz, gain:', gain.toFixed(3));
+                        console.log('📤 Sent HQ PCM:', downsampledData.length, 'samples @8kHz, gain:', gain.toFixed(3));
                     }
                 };
 
@@ -541,12 +535,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.microphone.connect(this.processor);
                 this.processor.connect(this.tempAudioContext.createGain()); // Silent sink - no echo
 
-                console.log('✅ Raw PCM microphone active - speak to Femi');
+                console.log('✅ High-quality PCM microphone active - speak to Femi');
 
             } catch (error) {
                 console.error('❌ Microphone access failed:', error);
                 this.cleanup();
             }
+        }
+
+        // High-quality resampling using linear interpolation
+        resampleLinear(inputData, inputRate = 48000, outputRate = 8000) {
+            const ratio = inputRate / outputRate;
+            const outputLength = Math.floor(inputData.length / ratio);
+            const outputData = new Float32Array(outputLength);
+            
+            for (let i = 0; i < outputLength; i++) {
+                const index = i * ratio;
+                const low = Math.floor(index);
+                const high = Math.min(Math.ceil(index), inputData.length - 1);
+                const weight = index - low;
+                
+                // Linear interpolation between adjacent samples
+                const sample = (1 - weight) * inputData[low] + weight * inputData[high];
+                outputData[i] = sample;
+            }
+            
+            return outputData;
         }
 
         async sendCleanAudio(audioBlob) {
