@@ -470,66 +470,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
         async startMicrophone() {
             try {
-                // Get microphone access with high quality settings
+                console.log('Starting clean microphone...');
+                
+                // Get clean, high-quality microphone access
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
-                        sampleRate: 48000,  // Start with high quality
+                        sampleRate: 16000,  // Good quality but not too high
                         channelCount: 1,
                         echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
+                        noiseSuppression: false,  // Turn off - might be causing issues
+                        autoGainControl: false    // Turn off - might be causing issues
                     }
                 });
 
-                // Create audio context for processing
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-                    sampleRate: 48000  // High quality processing
-                });
+                // Use MediaRecorder - much simpler and cleaner
+                const options = {
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 16000
+                };
 
-                this.microphone = this.audioContext.createMediaStreamSource(stream);
+                this.recorder = new MediaRecorder(stream, options);
                 
-                // Create script processor for audio processing
-                this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);  // Larger buffer
-                
-                this.processor.onaudioprocess = (event) => {
-                    if (this.connected && this.ws.readyState === WebSocket.OPEN) {
-                        const inputBuffer = event.inputBuffer;
-                        const inputData = inputBuffer.getChannelData(0);
-                        
-                        // Downsample to 8kHz for backend
-                        const downsampledData = this.downsampleTo8kHz(inputData, 48000);
-                        
-                        // Convert float32 to 16-bit PCM
-                        const pcmData = new Int16Array(downsampledData.length);
-                        for (let i = 0; i < downsampledData.length; i++) {
-                            // Apply gentle compression to avoid clipping
-                            let sample = Math.max(-1, Math.min(1, downsampledData[i]));
-                            pcmData[i] = sample * 32767;
-                        }
-
-                        // Convert to μ-law
-                        const mulawData = this.pcmToMulaw(pcmData);
-                        
-                        // Encode to base64
-                        const base64Audio = btoa(String.fromCharCode(...mulawData));
-                        
-                        // Send in Twilio format
-                        const message = {
-                            event: "media",
-                            streamSid: this.streamSid,
-                            media: {
-                                payload: base64Audio
-                            }
-                        };
-
-                        this.ws.send(JSON.stringify(message));
+                this.recorder.ondataavailable = async (event) => {
+                    if (event.data.size > 0 && this.connected) {
+                        await this.sendCleanAudio(event.data);
                     }
                 };
 
-                this.microphone.connect(this.processor);
-                this.processor.connect(this.audioContext.destination);
-
-                console.log('Microphone active - speak to Femi');
+                // Send audio chunks every 100ms
+                this.recorder.start(100);
+                console.log('Microphone active - speak to Femi (clean audio mode)');
 
             } catch (error) {
                 console.error('Microphone access failed:', error);
@@ -537,29 +507,94 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Better downsampling function
-        downsampleTo8kHz(inputData, inputSampleRate) {
-            const targetSampleRate = 8000;
-            const ratio = inputSampleRate / targetSampleRate;
-            const outputLength = Math.round(inputData.length / ratio);
+        async sendCleanAudio(audioBlob) {
+            try {
+                // Convert the audio blob to a format the backend can handle
+                const arrayBuffer = await audioBlob.arrayBuffer();
+                
+                // Create audio context for conversion
+                if (!this.tempAudioContext) {
+                    this.tempAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Decode the audio data
+                const audioBuffer = await this.tempAudioContext.decodeAudioData(arrayBuffer);
+                
+                // Get the raw audio data
+                const channelData = audioBuffer.getChannelData(0);
+                
+                // Resample to 8kHz for backend
+                const resampledData = this.simpleResample(channelData, audioBuffer.sampleRate, 8000);
+                
+                // Convert to 16-bit PCM
+                const pcmData = new Int16Array(resampledData.length);
+                for (let i = 0; i < resampledData.length; i++) {
+                    // Simple conversion, no fancy processing
+                    pcmData[i] = Math.max(-32768, Math.min(32767, resampledData[i] * 32767));
+                }
+
+                // Convert to μ-law
+                const mulawData = this.simpleMulaw(pcmData);
+                
+                // Encode to base64
+                const base64Audio = btoa(String.fromCharCode(...mulawData));
+                
+                // Send to backend
+                const message = {
+                    event: "media",
+                    streamSid: this.streamSid,
+                    media: {
+                        payload: base64Audio
+                    }
+                };
+
+                this.ws.send(JSON.stringify(message));
+                console.log('📤 Sent clean audio chunk:', resampledData.length, 'samples');
+
+            } catch (error) {
+                console.error('Clean audio sending error:', error);
+            }
+        }
+
+        // Much simpler resampling
+        simpleResample(inputData, inputRate, outputRate) {
+            const ratio = inputRate / outputRate;
+            const outputLength = Math.floor(inputData.length / ratio);
             const outputData = new Float32Array(outputLength);
             
             for (let i = 0; i < outputLength; i++) {
-                const sourceIndex = i * ratio;
-                const leftIndex = Math.floor(sourceIndex);
-                const rightIndex = Math.ceil(sourceIndex);
-                const fraction = sourceIndex - leftIndex;
-                
-                if (rightIndex < inputData.length) {
-                    // Linear interpolation for better quality
-                    outputData[i] = inputData[leftIndex] * (1 - fraction) + 
-                                   inputData[rightIndex] * fraction;
-                } else {
-                    outputData[i] = inputData[leftIndex];
-                }
+                const inputIndex = Math.floor(i * ratio);
+                outputData[i] = inputData[inputIndex];
             }
             
             return outputData;
+        }
+
+        // Much simpler μ-law conversion
+        simpleMulaw(pcmData) {
+            const mulawData = new Uint8Array(pcmData.length);
+            for (let i = 0; i < pcmData.length; i++) {
+                let sample = pcmData[i];
+                // Simple μ-law approximation
+                const sign = sample < 0 ? 0x80 : 0x00;
+                if (sample < 0) sample = -sample;
+                
+                sample = Math.min(sample, 32635);
+                let exponent = 7;
+                
+                if (sample >= 256) {
+                    let temp = sample >> 8;
+                    exponent = 0;
+                    while (temp) {
+                        temp >>= 1;
+                        exponent++;
+                    }
+                }
+                
+                const mantissa = (sample >> (exponent + 3)) & 0x0F;
+                mulawData[i] = ~(sign | (exponent << 4) | mantissa);
+            }
+            return mulawData;
         }
 
         // Convert PCM to μ-law (simplified implementation)
@@ -600,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const pcmArray = this.mulawToPcm(mulawArray);
                 
                 // Create WAV file from PCM data
-                const wavBuffer = this.createWavFile(pcmArray, 22050);
+                const wavBuffer = this.createWavFile(pcmArray, 8000);
                 const audioBlob = new Blob([wavBuffer], { type: 'audio/wav' });
                 const audioUrl = URL.createObjectURL(audioBlob);
                 
@@ -710,20 +745,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.ws = null;
             }
 
-            // Stop audio processing
-            if (this.processor) {
-                this.processor.disconnect();
-                this.processor = null;
-            }
-            
-            if (this.microphone) {
-                this.microphone.disconnect();
-                this.microphone = null;
+            // Stop MediaRecorder
+            if (this.recorder && this.recorder.state !== 'inactive') {
+                this.recorder.stop();
+                this.recorder = null;
             }
 
-            if (this.audioContext) {
-                this.audioContext.close();
-                this.audioContext = null;
+            // Close temp audio context
+            if (this.tempAudioContext) {
+                this.tempAudioContext.close();
+                this.tempAudioContext = null;
             }
         }
     }
