@@ -446,6 +446,66 @@ document.addEventListener('DOMContentLoaded', function() {
         render();
     }
 
+    
+
+      
+
+
+        handleAccentDemo() {
+            // For the accent transformation demo
+            console.log('Accent transformation demo clicked');
+            this.showDemoFeedback('accent');
+        }
+
+handleVoiceAgentDemo(agent) {
+    console.log(`${agent.charAt(0).toUpperCase() + agent.slice(1)} voice agent demo clicked`);
+    
+    const widget = this.widgets[agent];
+    if (widget && widget.shadowRoot) {
+        const startBtn = widget.shadowRoot.querySelector('button');
+        const endBtn = widget.shadowRoot.querySelector('button[aria-label="End conversation"]');
+
+        if (this.isConversationActive[agent] && endBtn) {
+            endBtn.click();
+        } else if (startBtn) {
+            startBtn.click();
+        } else {
+            this.showDemoFeedback('loading');
+        }
+    } else {
+        console.warn(`${agent} widget not yet available`);
+        this.showDemoFeedback('loading');
+    }
+}
+
+
+        updateButtonState(agent, isActive) {
+            const playButtons = document.querySelectorAll('.play-button');
+            const buttonIndex = agent === 'femi' ? 1 : 2; // Femi is button 1, Sira is button 2
+            
+            if (playButtons[buttonIndex]) {
+                const button = playButtons[buttonIndex];
+                if (isActive) {
+                    button.style.background = 'var(--primary-pink)';
+                    button.style.transform = 'scale(1.1)';
+                    button.style.boxShadow = '0 15px 40px rgba(255, 107, 157, 0.5)';
+                } else {
+                    button.style.background = 'var(--gradient-rainbow)';
+                    button.style.transform = 'scale(1)';
+                    button.style.boxShadow = '0 10px 30px rgba(74, 144, 226, 0.3)';
+                }
+            }
+        }
+    }
+
+    // Initialize ElevenLabs integration when page loads
+    setTimeout(() => {
+        window.elevenLabsIntegration = new ElevenLabsVoiceIntegration();
+        console.log('ElevenLabs voice integration initialized');
+    }, 1000);
+
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   const micButton = document.querySelector('.demo-card .play-button');
   const micPopup = document.getElementById('mic-popup-container');
@@ -501,5 +561,3 @@ playButtons.forEach((button, index) => {
 closeAgentBtn.addEventListener("click", () => {
   agentModal.style.display = "none";
 });
-
-}
