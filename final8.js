@@ -612,3 +612,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+const agentModal = document.getElementById("agent-modal");
+const agentName = document.getElementById("agent-name");
+const agentAvatar = document.getElementById("agent-avatar-img");
+const playButtons = document.querySelectorAll(".demo-card-grid .play-button");
+const closeAgentBtn = document.querySelector(".close-agent-popup");
+
+const agentData = {
+  Femi: {
+    name: "Talk with Femi",
+    avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f4311fa86237e3f3ff6_femi-avatar.png"
+  },
+  Sira: {
+    name: "Talk with Sira",
+    avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f43e38d06781a6ebf23_sira-avatar.png"
+  }
+};
+
+playButtons.forEach((button, index) => {
+  button.addEventListener("click", () => {
+    const agent = index === 0 ? "Femi" : "Sira";
+    agentName.innerText = agentData[agent].name;
+    agentAvatar.src = agentData[agent].avatar;
+    agentModal.style.display = "flex";
+  });
+});
+
+closeAgentBtn.addEventListener("click", () => {
+  agentModal.style.display = "none";
+});
+
+
