@@ -576,40 +576,6 @@ handleVoiceAgentDemo(agent) {
                 }
             }
         }
-
-        showDemoFeedback(type) {
-            // Show temporary feedback to user
-            const feedback = document.createElement('div');
-            feedback.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(0, 0, 0, 0.9);
-                color: white;
-                padding: 20px 40px;
-                border-radius: 10px;
-                z-index: 10000;
-                border: 2px solid var(--primary-blue);
-                text-align: center;
-                font-size: 1.1rem;
-            `;
-            
-            const messages = {
-                accent: '🎤 Accent transformation demo - Feature coming soon!',
-                loading: '⏳ Voice agent loading... Please wait a moment and try again.'
-            };
-            
-            feedback.textContent = messages[type] || 'Demo feature activated!';
-            document.body.appendChild(feedback);
-            
-            // Remove feedback after 3 seconds
-            setTimeout(() => {
-                if (document.body.contains(feedback)) {
-                    document.body.removeChild(feedback);
-                }
-            }, 3000);
-        }
     }
 
     // Initialize ElevenLabs integration when page loads
