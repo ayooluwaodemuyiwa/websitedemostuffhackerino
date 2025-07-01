@@ -446,11 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
         render();
     }
 
-    
-
-      
-
-
+}
         handleAccentDemo() {
             // For the accent transformation demo
             console.log('Accent transformation demo clicked');
