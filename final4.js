@@ -312,22 +312,22 @@ document.addEventListener('DOMContentLoaded', function() {
         var w = window.innerWidth;
         var h = window.innerHeight;
 
-        var ctx = hero_canvas.getContext("2d");
-        ctx.canvas.width = w;
-        ctx.canvas.height = h;
+        var ctx2 = hero_canvas.getContext("2d");
+        ctx2.canvas.width = w;
+        ctx2.canvas.height = h;
 
         var start = performance.now();
 
         window.onresize = function () {
             w = window.innerWidth;
             h = window.innerHeight;
-            ctx.canvas.width = w;
-            ctx.canvas.height = h;
+            ctx2.canvas.width = w;
+            ctx2.canvas.height = h;
         };
 
         function drawSine(time, angular_freq) {
-            ctx.beginPath();
-            ctx.strokeStyle = "rgba(46, 151, 157, 1)";
+            ctx2.beginPath();
+            ctx2.strokeStyle = "rgba(46, 151, 157, 1)";
 
             var elapsed = (time - start) / 1000;
             var phase_angle = elapsed * 2;
@@ -337,11 +337,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 amplitude = noise.perlin2(x / 100, elapsed) * 200;
                 amplitude *= Math.sin(x * 2) * 3;
                 y = amplitude * Math.sin(x * angular_freq + phase_angle);
-                ctx.lineTo(x, y + h / 2);
+                ctx2.lineTo(x, y + h / 2);
             }
 
-            ctx.stroke();
-            ctx.closePath();
+            ctx2.stroke();
+            ctx2.closePath();
         }
 
         function drawDots(time) {
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var dotSize = 3;
             var spacing = 20;
             
-            ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
+            ctx2.fillStyle = "rgba(46, 151, 157, 0.6)";
             
             for (var x = 0; x < w; x += spacing) {
                 for (var y = 0; y < h; y += spacing) {
@@ -358,19 +358,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     var size = dotSize + (noiseValue * 2);
                     
                     if (alpha > 0.3) {
-                        ctx.globalAlpha = alpha;
-                        ctx.beginPath();
-                        ctx.arc(x, y, size, 0, Math.PI * 2);
-                        ctx.fill();
+                        ctx2.globalAlpha = alpha;
+                        ctx2.beginPath();
+                        ctx2.arc(x, y, size, 0, Math.PI * 2);
+                        ctx2.fill();
                     }
                 }
             }
-            ctx.globalAlpha = 1;
+            ctx2.globalAlpha = 1;
         }
 
         function render(time) {
     // clear screen with transparency instead of solid black
-    ctx.clearRect(0, 0, w, h);  // Use clearRect instead of black fillRect
+    ctx2.clearRect(0, 0, w, h);  // Use clearRect instead of black fillRect
     
     // Draw animated dots
     drawDots(time);
