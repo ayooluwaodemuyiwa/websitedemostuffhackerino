@@ -185,3 +185,437 @@
         }
         return 32 * (n0 + n1 + n2 + n3);
     };
+
+    function fade(t) {
+        return t * t * t * (t * (t * 6 - 15) + 10);
+    }
+
+    function lerp(a, b, t) {
+        return (1 - t) * a + t * b;
+    }
+
+    module.perlin2 = function (x, y) {
+        var X = Math.floor(x), Y = Math.floor(y);
+        x = x - X; y = y - Y;
+        X = X & 255; Y = Y & 255;
+
+        var n00 = gradP[X + perm[Y]].dot2(x, y);
+        var n01 = gradP[X + perm[Y + 1]].dot2(x, y - 1);
+        var n10 = gradP[X + 1 + perm[Y]].dot2(x - 1, y);
+        var n11 = gradP[X + 1 + perm[Y + 1]].dot2(x - 1, y - 1);
+
+        var u = fade(x);
+
+        return lerp(
+            lerp(n00, n10, u),
+            lerp(n01, n11, u),
+            fade(y));
+    };
+
+    module.perlin3 = function (x, y, z) {
+        var X = Math.floor(x), Y = Math.floor(y), Z = Math.floor(z);
+        x = x - X; y = y - Y; z = z - Z;
+        X = X & 255; Y = Y & 255; Z = Z & 255;
+
+        var n000 = gradP[X + perm[Y + perm[Z]]].dot3(x, y, z);
+        var n001 = gradP[X + perm[Y + perm[Z + 1]]].dot3(x, y, z - 1);
+        var n010 = gradP[X + perm[Y + 1 + perm[Z]]].dot3(x, y - 1, z);
+        var n011 = gradP[X + perm[Y + 1 + perm[Z + 1]]].dot3(x, y - 1, z - 1);
+        var n100 = gradP[X + 1 + perm[Y + perm[Z]]].dot3(x - 1, y, z);
+        var n101 = gradP[X + 1 + perm[Y + perm[Z + 1]]].dot3(x - 1, y, z - 1);
+        var n110 = gradP[X + 1 + perm[Y + 1 + perm[Z]]].dot3(x - 1, y - 1, z);
+        var n111 = gradP[X + 1 + perm[Y + 1 + perm[Z + 1]]].dot3(x - 1, y - 1, z - 1);
+
+        var u = fade(x);
+        var v = fade(y);
+        var w = fade(z);
+
+        return lerp(
+            lerp(
+                lerp(n000, n100, u),
+                lerp(n001, n101, u), w),
+            lerp(
+                lerp(n010, n110, u),
+                lerp(n011, n111, u), w),
+            v);
+    };
+
+})(this);
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Create floating particles
+    const particlesContainer = document.getElementById('particles');
+    if (particlesContainer) {
+        const particleCount = 30;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+    }
+
+    // Smooth scroll for navigation
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Navbar background on scroll
+    window.addEventListener('scroll', () => {
+        const nav = document.querySelector('nav');
+        const navButton = document.querySelector('.nav-buttons .btn.btn-secondary');
+        
+        if (nav) {
+            if (window.scrollY > 50) {
+                nav.style.background = 'rgba(0, 0, 0, 0.4)';
+                nav.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
+                if (navButton) {
+                    navButton.style.color = 'white';
+                    navButton.style.borderColor = 'white';
+                }
+            } else {
+                nav.style.background = 'rgba(0, 0, 0, 0.75)';
+                nav.style.boxShadow = 'none';
+            }
+        }
+    });
+
+    // Pause team scroll on hover
+    const teamScroll = document.querySelector('.team-scroll');
+    if (teamScroll) {
+        teamScroll.addEventListener('mouseenter', () => {
+            teamScroll.style.animationPlayState = 'paused';
+        });
+        teamScroll.addEventListener('mouseleave', () => {
+            teamScroll.style.animationPlayState = 'running';
+        });
+    }
+ 
+    
+    // Canvas animation - Enhanced version with both sine wave and dots
+    const hero_canvas = document.getElementById("hero-canvas");
+    if (hero_canvas) {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+
+        var ctx = hero_canvas.getContext("2d");
+        ctx.canvas.width = w;
+        ctx.canvas.height = h;
+
+        var start = performance.now();
+
+        window.onresize = function () {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            ctx.canvas.width = w;
+            ctx.canvas.height = h;
+        };
+
+        function drawSine(time, angular_freq) {
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(46, 151, 157, 1)";
+
+            var elapsed = (time - start) / 1000;
+            var phase_angle = elapsed * 2;
+
+            var x, y, amplitude;
+            for (x = 0; x < w; x++) {
+                amplitude = noise.perlin2(x / 100, elapsed) * 200;
+                amplitude *= Math.sin(x * 2) * 3;
+                y = amplitude * Math.sin(x * angular_freq + phase_angle);
+                ctx.lineTo(x, y + h / 2);
+            }
+
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function drawDots(time) {
+            var elapsed = (time - start) / 1000;
+            var dotSize = 3;
+            var spacing = 20;
+            
+            ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
+            
+            for (var x = 0; x < w; x += spacing) {
+                for (var y = 0; y < h; y += spacing) {
+                    var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
+                    var alpha = Math.abs(noiseValue);
+                    var size = dotSize + (noiseValue * 2);
+                    
+                    if (alpha > 0.3) {
+                        ctx.globalAlpha = alpha;
+                        ctx.beginPath();
+                        ctx.arc(x, y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function render(time) {
+    // clear screen with transparency instead of solid black
+    ctx.clearRect(0, 0, w, h);  // Use clearRect instead of black fillRect
+    
+    // Draw animated dots
+    drawDots(time);
+    
+    // Draw sine wave
+    drawSine(time, 10);
+    
+    requestAnimationFrame(render);
+}
+
+        // Initialize noise and start rendering
+        noise.seed(Math.random());
+        render();
+    }
+
+
+
+
+     const canvas = document.getElementById("canvas");
+    if (canvas) {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+
+        var ctx = canvas.getContext("2d");
+        ctx.canvas.width = w;
+        ctx.canvas.height = h;
+
+        var start = performance.now();
+
+        window.onresize = function () {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            ctx.canvas.width = w;
+            ctx.canvas.height = h;
+        };
+
+        function drawDots(time) {
+            var elapsed = (time - start) / 1000;
+            var dotSize = 3;
+            var spacing = 20;
+            
+            ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
+            
+            for (var x = 0; x < w; x += spacing) {
+                for (var y = 0; y < h; y += spacing) {
+                    var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
+                    var alpha = Math.abs(noiseValue);
+                    var size = dotSize + (noiseValue * 2);
+                    
+                    if (alpha > 0.3) {
+                        ctx.globalAlpha = alpha;
+                        ctx.beginPath();
+                        ctx.arc(x, y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function render(time) {
+    // clear screen with transparency instead of solid black
+    ctx.clearRect(0, 0, w, h);  // Use clearRect instead of black fillRect
+    
+    // Draw animated dots
+    drawDots(time);
+    
+    requestAnimationFrame(render);
+}
+
+        // Initialize noise and start rendering
+        noise.seed(Math.random());
+        render();
+    }
+
+    // ElevenLabs Voice Integration - Clean and Simple
+    class ElevenLabsVoiceIntegration {
+        constructor() {
+            this.isConversationActive = {
+                femi: false,
+                sira: false
+            };
+            this.widgets = {
+                femi: null,
+                sira: null
+            };
+            this.initializeButtons();
+            this.waitForElevenLabsWidgets();
+        }
+
+        initializeButtons() {
+            // Find all play buttons for voice demos
+            const playButtons = document.querySelectorAll('.play-button');
+            
+            playButtons.forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    // Different behavior for different buttons
+                    if (index === 0) {
+                        // First button - accent transformation demo
+                        this.handleAccentDemo();
+                    } else if (index === 1) {
+                        // Second button - Femi voice agent
+                        this.handleVoiceAgentDemo('femi');
+                    } else if (index === 2) {
+                        // Third button - Sira voice agent
+                        this.handleVoiceAgentDemo('sira');
+                    }
+                });
+            });
+        }
+
+        waitForElevenLabsWidgets() {
+            // Wait for the ElevenLabs widgets to load
+            const checkWidgets = () => {
+                this.widgets.femi = document.querySelector('#femi-widget');
+                this.widgets.sira = document.querySelector('#sira-widget');
+                
+                if (this.widgets.femi && this.widgets.sira) {
+                    console.log('ElevenLabs widgets found and ready');
+                    this.setupWidgetEvents();
+                } else {
+                    // Keep checking every 500ms until widgets are loaded
+                    setTimeout(checkWidgets, 500);
+                }
+            };
+            checkWidgets();
+        }
+
+        setupWidgetEvents() {
+            // Setup events for Femi widget
+            if (this.widgets.femi) {
+                this.widgets.femi.addEventListener('conversationStarted', () => {
+                    this.isConversationActive.femi = true;
+                    this.updateButtonState('femi', true);
+                    console.log('Conversation started with Femi');
+                });
+
+                this.widgets.femi.addEventListener('conversationEnded', () => {
+                    this.isConversationActive.femi = false;
+                    this.updateButtonState('femi', false);
+                    console.log('Conversation ended with Femi');
+                });
+            }
+
+            // Setup events for Sira widget
+            if (this.widgets.sira) {
+                this.widgets.sira.addEventListener('conversationStarted', () => {
+                    this.isConversationActive.sira = true;
+                    this.updateButtonState('sira', true);
+                    console.log('Conversation started with Sira');
+                });
+
+                this.widgets.sira.addEventListener('conversationEnded', () => {
+                    this.isConversationActive.sira = false;
+                    this.updateButtonState('sira', false);
+                    console.log('Conversation ended with Sira');
+                });
+            }
+        }
+
+        handleAccentDemo() {
+            // For the accent transformation demo
+            console.log('Accent transformation demo clicked');
+            this.showDemoFeedback('accent');
+        }
+
+handleVoiceAgentDemo(agent) {
+    console.log(`${agent.charAt(0).toUpperCase() + agent.slice(1)} voice agent demo clicked`);
+    
+    const widget = this.widgets[agent];
+    if (widget && widget.shadowRoot) {
+        const startBtn = widget.shadowRoot.querySelector('button');
+        const endBtn = widget.shadowRoot.querySelector('button[aria-label="End conversation"]');
+
+        if (this.isConversationActive[agent] && endBtn) {
+            endBtn.click();
+        } else if (startBtn) {
+            startBtn.click();
+        } else {
+            this.showDemoFeedback('loading');
+        }
+    } else {
+        console.warn(`${agent} widget not yet available`);
+        this.showDemoFeedback('loading');
+    }
+}
+
+
+        updateButtonState(agent, isActive) {
+            const playButtons = document.querySelectorAll('.play-button');
+            const buttonIndex = agent === 'femi' ? 1 : 2; // Femi is button 1, Sira is button 2
+            
+            if (playButtons[buttonIndex]) {
+                const button = playButtons[buttonIndex];
+                if (isActive) {
+                    button.style.background = 'var(--primary-pink)';
+                    button.style.transform = 'scale(1.1)';
+                    button.style.boxShadow = '0 15px 40px rgba(255, 107, 157, 0.5)';
+                } else {
+                    button.style.background = 'var(--gradient-rainbow)';
+                    button.style.transform = 'scale(1)';
+                    button.style.boxShadow = '0 10px 30px rgba(74, 144, 226, 0.3)';
+                }
+            }
+        }
+
+        showDemoFeedback(type) {
+            // Show temporary feedback to user
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 20px 40px;
+                border-radius: 10px;
+                z-index: 10000;
+                border: 2px solid var(--primary-blue);
+                text-align: center;
+                font-size: 1.1rem;
+            `;
+            
+            const messages = {
+                accent: '🎤 Accent transformation demo - Feature coming soon!',
+                loading: '⏳ Voice agent loading... Please wait a moment and try again.'
+            };
+            
+            feedback.textContent = messages[type] || 'Demo feature activated!';
+            document.body.appendChild(feedback);
+            
+            // Remove feedback after 3 seconds
+            setTimeout(() => {
+                if (document.body.contains(feedback)) {
+                    document.body.removeChild(feedback);
+                }
+            }, 3000);
+        }
+    }
+
+    // Initialize ElevenLabs integration when page loads
+    setTimeout(() => {
+        window.elevenLabsIntegration = new ElevenLabsVoiceIntegration();
+        console.log('ElevenLabs voice integration initialized');
+    }, 1000);
+
+});
