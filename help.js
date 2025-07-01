@@ -368,18 +368,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function render(time) {
-            // clear screen
-            ctx.fillStyle = "rgba(0, 0, 0, 1)";
-            ctx.fillRect(0, 0, w, h);
-            
-            // Draw animated dots
-            drawDots(time);
-            
-            // Draw sine wave
-            drawSine(time, 10);
-            
-            requestAnimationFrame(render);
-        }
+    // clear screen with transparency instead of solid black
+    ctx.clearRect(0, 0, w, h);  // Use clearRect instead of black fillRect
+    
+    // Draw animated dots
+    drawDots(time);
+    
+    // Draw sine wave
+    drawSine(time, 10);
+    
+    requestAnimationFrame(render);
+}
 
         // Initialize noise and start rendering
         noise.seed(Math.random());
