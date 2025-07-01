@@ -304,14 +304,15 @@ document.addEventListener('DOMContentLoaded', function() {
             teamScroll.style.animationPlayState = 'running';
         });
     }
-
+ 
+    
     // Canvas animation - Enhanced version with both sine wave and dots
-    const canvas = document.getElementById("canvas");
-    if (canvas) {
+    const hero_canvas = document.getElementById("hero-canvas");
+    if (hero_canvas) {
         var w = window.innerWidth;
         var h = window.innerHeight;
 
-        var ctx = canvas.getContext("2d");
+        var ctx = hero_canvas.getContext("2d");
         ctx.canvas.width = w;
         ctx.canvas.height = h;
 
@@ -376,6 +377,66 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Draw sine wave
     drawSine(time, 10);
+    
+    requestAnimationFrame(render);
+}
+
+        // Initialize noise and start rendering
+        noise.seed(Math.random());
+        render();
+    }
+
+
+
+
+     const canvas = document.getElementById("canvas");
+    if (canvas) {
+        var w = window.innerWidth;
+        var h = window.innerHeight;
+
+        var ctx = canvas.getContext("2d");
+        ctx.canvas.width = w;
+        ctx.canvas.height = h;
+
+        var start = performance.now();
+
+        window.onresize = function () {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            ctx.canvas.width = w;
+            ctx.canvas.height = h;
+        };
+
+        function drawDots(time) {
+            var elapsed = (time - start) / 1000;
+            var dotSize = 3;
+            var spacing = 20;
+            
+            ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
+            
+            for (var x = 0; x < w; x += spacing) {
+                for (var y = 0; y < h; y += spacing) {
+                    var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
+                    var alpha = Math.abs(noiseValue);
+                    var size = dotSize + (noiseValue * 2);
+                    
+                    if (alpha > 0.3) {
+                        ctx.globalAlpha = alpha;
+                        ctx.beginPath();
+                        ctx.arc(x, y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function render(time) {
+    // clear screen with transparency instead of solid black
+    ctx.clearRect(0, 0, w, h);  // Use clearRect instead of black fillRect
+    
+    // Draw animated dots
+    drawDots(time);
     
     requestAnimationFrame(render);
 }
