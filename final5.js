@@ -619,3 +619,30 @@ handleVoiceAgentDemo(agent) {
     }, 1000);
 
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  const micButton = document.querySelector('.demo-card .play-button');
+  const micPopup = document.getElementById('mic-popup-container');
+  const closeMic = document.querySelector('.close-mic-popup');
+
+  if (micButton && micPopup && closeMic) {
+    micButton.addEventListener('click', () => {
+      micPopup.style.display = 'block';
+    });
+
+    closeMic.addEventListener('click', () => {
+      micPopup.style.display = 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (
+        micPopup.style.display === 'block' &&
+        !micPopup.contains(e.target) &&
+        !micButton.contains(e.target)
+      ) {
+        micPopup.style.display = 'none';
+      }
+    });
+  }
+});
+
