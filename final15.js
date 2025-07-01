@@ -15,8 +15,8 @@
     };
 
     var grad3 = [new Grad(1, 1, 0), new Grad(-1, 1, 0), new Grad(1, -1, 0), new Grad(-1, -1, 0),
-    new Grad(1, 0, 1), new Grad(-1, 0, 1), new Grad(1, 0, -1), new Grad(-1, 0, -1),
-    new Grad(0, 1, 1), new Grad(0, -1, 1), new Grad(0, 1, -1), new Grad(0, -1, -1)];
+        new Grad(1, 0, 1), new Grad(-1, 0, 1), new Grad(1, 0, -1), new Grad(-1, 0, -1),
+        new Grad(0, 1, 1), new Grad(0, -1, 1), new Grad(0, 1, -1), new Grad(0, -1, -1)];
 
     var p = [151, 160, 137, 91, 90, 15,
         131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23,
@@ -242,9 +242,80 @@
 
 })(this);
 
+// ElevenLabs Voice Integration Class
+class ElevenLabsVoiceIntegration {
+    constructor() {
+        this.widgets = {};
+        this.isConversationActive = {};
+        this.init();
+    }
+
+    init() {
+        console.log('Initializing ElevenLabs voice integration...');
+        this.setupVoiceAgents();
+    }
+
+    setupVoiceAgents() {
+        const agents = ['femi', 'sira'];
+        
+        agents.forEach(agent => {
+            this.isConversationActive[agent] = false;
+            console.log(`Setting up ${agent} voice agent`);
+        });
+    }
+
+    showDemoFeedback(type) {
+        console.log(`Showing demo feedback for: ${type}`);
+        // Add your feedback logic here
+    }
+
+    handleAccentDemo() {
+        console.log('Accent transformation demo clicked');
+        this.showDemoFeedback('accent');
+    }
+
+    handleVoiceAgentDemo(agent) {
+        console.log(`${agent.charAt(0).toUpperCase() + agent.slice(1)} voice agent demo clicked`);
+        
+        const widget = this.widgets[agent];
+        if (widget && widget.shadowRoot) {
+            const startBtn = widget.shadowRoot.querySelector('button');
+            const endBtn = widget.shadowRoot.querySelector('button[aria-label="End conversation"]');
+
+            if (this.isConversationActive[agent] && endBtn) {
+                endBtn.click();
+            } else if (startBtn) {
+                startBtn.click();
+            } else {
+                this.showDemoFeedback('loading');
+            }
+        } else {
+            console.warn(`${agent} widget not yet available`);
+            this.showDemoFeedback('loading');
+        }
+    }
+
+    updateButtonState(agent, isActive) {
+        const playButtons = document.querySelectorAll('.play-button');
+        const buttonIndex = agent === 'femi' ? 1 : 2; // Femi is button 1, Sira is button 2
+        
+        if (playButtons[buttonIndex]) {
+            const button = playButtons[buttonIndex];
+            if (isActive) {
+                button.style.background = 'var(--primary-pink)';
+                button.style.transform = 'scale(1.1)';
+                button.style.boxShadow = '0 15px 40px rgba(255, 107, 157, 0.5)';
+            } else {
+                button.style.background = 'var(--gradient-rainbow)';
+                button.style.transform = 'scale(1)';
+                button.style.boxShadow = '0 10px 30px rgba(74, 144, 226, 0.3)';
+            }
+        }
+    }
+}
+
 // Initialize everything when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-
     // Create floating particles
     const particlesContainer = document.getElementById('particles');
     if (particlesContainer) {
@@ -304,8 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
             teamScroll.style.animationPlayState = 'running';
         });
     }
- 
-    
+
     // Canvas animation - Enhanced version with both sine wave and dots
     const hero_canvas = document.getElementById("hero-canvas");
     if (hero_canvas) {
@@ -369,53 +439,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function render(time) {
-    // clear screen with transparency instead of solid black
-    ctx2.clearRect(0, 0, w, h);  // Use clearRect instead of black fillRect
-    
-    // Draw animated dots
-    drawDots(time);
-    
-    // Draw sine wave
-    drawSine(time, 10);
-    
-    requestAnimationFrame(render);
-}
+            // Clear screen with transparency instead of solid black
+            ctx2.clearRect(0, 0, w, h);
+            
+            // Draw animated dots
+            drawDots(time);
+            
+            // Draw sine wave
+            drawSine(time, 10);
+            
+            requestAnimationFrame(render);
+        }
 
         // Initialize noise and start rendering
         noise.seed(Math.random());
         render();
     }
 
-
-
-
-     const canvas = document.getElementById("canvas");
+    // Second canvas animation (dots only)
+    const canvas = document.getElementById("canvas");
     if (canvas) {
-        var w = window.innerWidth;
-        var h = window.innerHeight;
+        var w2 = window.innerWidth;
+        var h2 = window.innerHeight;
 
         var ctx = canvas.getContext("2d");
-        ctx.canvas.width = w;
-        ctx.canvas.height = h;
+        ctx.canvas.width = w2;
+        ctx.canvas.height = h2;
 
-        var start = performance.now();
+        var start2 = performance.now();
 
-        window.onresize = function () {
-            w = window.innerWidth;
-            h = window.innerHeight;
-            ctx.canvas.width = w;
-            ctx.canvas.height = h;
-        };
+        window.addEventListener('resize', function () {
+            w2 = window.innerWidth;
+            h2 = window.innerHeight;
+            ctx.canvas.width = w2;
+            ctx.canvas.height = h2;
+        });
 
-        function drawDots(time) {
-            var elapsed = (time - start) / 1000;
+        function drawDots2(time) {
+            var elapsed = (time - start2) / 1000;
             var dotSize = 3;
             var spacing = 20;
             
             ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
             
-            for (var x = 0; x < w; x += spacing) {
-                for (var y = 0; y < h; y += spacing) {
+            for (var x = 0; x < w2; x += spacing) {
+                for (var y = 0; y < h2; y += spacing) {
                     var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
                     var alpha = Math.abs(noiseValue);
                     var size = dotSize + (noiseValue * 2);
@@ -431,129 +499,82 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.globalAlpha = 1;
         }
 
-        function render(time) {
-    // clear screen with transparency instead of solid black
-    ctx.clearRect(0, 0, w, h);  // Use clearRect instead of black fillRect
-    
-    // Draw animated dots
-    drawDots(time);
-    
-    requestAnimationFrame(render);
-}
+        function render2(time) {
+            // Clear screen with transparency instead of solid black
+            ctx.clearRect(0, 0, w2, h2);
+            
+            // Draw animated dots
+            drawDots2(time);
+            
+            requestAnimationFrame(render2);
+        }
 
         // Initialize noise and start rendering
         noise.seed(Math.random());
-        render();
+        render2();
     }
 
-}
-        handleAccentDemo() {
-            // For the accent transformation demo
-            console.log('Accent transformation demo clicked');
-            this.showDemoFeedback('accent');
-        }
-
-handleVoiceAgentDemo(agent) {
-    console.log(`${agent.charAt(0).toUpperCase() + agent.slice(1)} voice agent demo clicked`);
-    
-    const widget = this.widgets[agent];
-    if (widget && widget.shadowRoot) {
-        const startBtn = widget.shadowRoot.querySelector('button');
-        const endBtn = widget.shadowRoot.querySelector('button[aria-label="End conversation"]');
-
-        if (this.isConversationActive[agent] && endBtn) {
-            endBtn.click();
-        } else if (startBtn) {
-            startBtn.click();
-        } else {
-            this.showDemoFeedback('loading');
-        }
-    } else {
-        console.warn(`${agent} widget not yet available`);
-        this.showDemoFeedback('loading');
-    }
-}
-
-
-        updateButtonState(agent, isActive) {
-            const playButtons = document.querySelectorAll('.play-button');
-            const buttonIndex = agent === 'femi' ? 1 : 2; // Femi is button 1, Sira is button 2
-            
-            if (playButtons[buttonIndex]) {
-                const button = playButtons[buttonIndex];
-                if (isActive) {
-                    button.style.background = 'var(--primary-pink)';
-                    button.style.transform = 'scale(1.1)';
-                    button.style.boxShadow = '0 15px 40px rgba(255, 107, 157, 0.5)';
-                } else {
-                    button.style.background = 'var(--gradient-rainbow)';
-                    button.style.transform = 'scale(1)';
-                    button.style.boxShadow = '0 10px 30px rgba(74, 144, 226, 0.3)';
-                }
-            }
-        }
-    }
-
-    // Initialize ElevenLabs integration when page loads
+    // Initialize ElevenLabs integration
     setTimeout(() => {
         window.elevenLabsIntegration = new ElevenLabsVoiceIntegration();
         console.log('ElevenLabs voice integration initialized');
     }, 1000);
 
-});
+    // Microphone popup functionality
+    const micButton = document.querySelector('.demo-card .play-button');
+    const micPopup = document.getElementById('mic-popup-container');
+    const closeMic = document.querySelector('.close-mic-popup');
 
-document.addEventListener('DOMContentLoaded', () => {
-  const micButton = document.querySelector('.demo-card .play-button');
-  const micPopup = document.getElementById('mic-popup-container');
-  const closeMic = document.querySelector('.close-mic-popup');
+    if (micButton && micPopup && closeMic) {
+        micButton.addEventListener('click', () => {
+            micPopup.style.display = 'block';
+        });
 
-  if (micButton && micPopup && closeMic) {
-    micButton.addEventListener('click', () => {
-      micPopup.style.display = 'block';
-    });
+        closeMic.addEventListener('click', () => {
+            micPopup.style.display = 'none';
+        });
 
-    closeMic.addEventListener('click', () => {
-      micPopup.style.display = 'none';
-    });
+        document.addEventListener('click', (e) => {
+            if (
+                micPopup.style.display === 'block' &&
+                !micPopup.contains(e.target) &&
+                !micButton.contains(e.target)
+            ) {
+                micPopup.style.display = 'none';
+            }
+        });
+    }
 
-    document.addEventListener('click', (e) => {
-      if (
-        micPopup.style.display === 'block' &&
-        !micPopup.contains(e.target) &&
-        !micButton.contains(e.target)
-      ) {
-        micPopup.style.display = 'none';
-      }
-    });
-  }
-});
+    // Agent modal functionality
+    const agentModal = document.getElementById("agent-modal");
+    const agentName = document.getElementById("agent-name");
+    const agentAvatar = document.getElementById("agent-avatar-img");
+    const playButtons = document.querySelectorAll(".demo-card-grid .play-button");
+    const closeAgentBtn = document.querySelector(".close-agent-popup");
 
-const agentModal = document.getElementById("agent-modal");
-const agentName = document.getElementById("agent-name");
-const agentAvatar = document.getElementById("agent-avatar-img");
-const playButtons = document.querySelectorAll(".demo-card-grid .play-button");
-const closeAgentBtn = document.querySelector(".close-agent-popup");
+    const agentData = {
+        Femi: {
+            name: "Talk with Femi",
+            avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f4311fa86237e3f3ff6_femi-avatar.png"
+        },
+        Sira: {
+            name: "Talk with Sira",
+            avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f43e38d06781a6ebf23_sira-avatar.png"
+        }
+    };
 
-const agentData = {
-  Femi: {
-    name: "Talk with Femi",
-    avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f4311fa86237e3f3ff6_femi-avatar.png"
-  },
-  Sira: {
-    name: "Talk with Sira",
-    avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f43e38d06781a6ebf23_sira-avatar.png"
-  }
-};
+    if (agentModal && agentName && agentAvatar && closeAgentBtn) {
+        playButtons.forEach((button, index) => {
+            button.addEventListener("click", () => {
+                const agent = index === 0 ? "Femi" : "Sira";
+                agentName.innerText = agentData[agent].name;
+                agentAvatar.src = agentData[agent].avatar;
+                agentModal.style.display = "flex";
+            });
+        });
 
-playButtons.forEach((button, index) => {
-  button.addEventListener("click", () => {
-    const agent = index === 0 ? "Femi" : "Sira";
-    agentName.innerText = agentData[agent].name;
-    agentAvatar.src = agentData[agent].avatar;
-    agentModal.style.display = "flex";
-  });
-});
-
-closeAgentBtn.addEventListener("click", () => {
-  agentModal.style.display = "none";
+        closeAgentBtn.addEventListener("click", () => {
+            agentModal.style.display = "none";
+        });
+    }
 });
