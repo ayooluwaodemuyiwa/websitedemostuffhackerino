@@ -502,4 +502,4 @@ closeAgentBtn.addEventListener("click", () => {
   agentModal.style.display = "none";
 });
 
-
+}
