@@ -830,4 +830,4 @@ document.addEventListener('DOMContentLoaded', function() {
             handleCallFormSubmit(agent2Form, 'sira', 'agent2');
         });
     }
-});
+});})
