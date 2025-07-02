@@ -545,12 +545,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Agent modal functionality
-    const agentModal = document.getElementById("agent-modal");
-    const agentName = document.getElementById("agent-name");
-    const agentAvatar = document.getElementById("agent-avatar-img");
+   // Agent modal functionality - UPDATED FOR agent1 and agent2
     const playButtons = document.querySelectorAll(".demo-card-grid .play-button");
-    const closeAgentBtn = document.querySelector(".close-agent-popup");
+    const closeAgentBtns = document.querySelectorAll(".close-agent-popup");
 
     const agentData = {
         Femi: {
@@ -558,27 +555,72 @@ document.addEventListener('DOMContentLoaded', function() {
             avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f4311fa86237e3f3ff6_femi-avatar.png"
         },
         Sira: {
-            name: "Talk with Sira",
+            name: "Talk with Sira (French)",
             avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f43e38d06781a6ebf23_sira-avatar.png"
         }
     };
 
-    if (agentModal && agentName && agentAvatar && closeAgentBtn) {
+    // Handle play button clicks
+    if (playButtons.length > 0) {
         playButtons.forEach((button, index) => {
             button.addEventListener("click", () => {
                 const agent = index === 0 ? "Femi" : "Sira";
-                agentName.innerText = agentData[agent].name;
-                agentAvatar.src = agentData[agent].avatar;
-                agentModal.style.display = "flex";
+                const modalId = index === 0 ? "agent1" : "agent2";
+                const modal = document.getElementById(modalId);
+                
+                if (modal) {
+                    // Update modal content
+                    const agentName = modal.querySelector('h3');
+                    const agentAvatar = modal.querySelector('.agent-avatar img');
+                    
+                    if (agentName) agentName.textContent = agentData[agent].name;
+                    if (agentAvatar) agentAvatar.src = agentData[agent].avatar;
+                    
+                    // Update description
+                    const description = modal.querySelector('.agent-description');
+                    if (description) {
+                        description.textContent = agent === "Femi" ? 
+                            "Enter your details and Femi will give you a call in English." :
+                            "Enter your details and Sira will give you a call in French.";
+                    }
+                    
+                    modal.style.display = "flex";
+                }
             });
         });
+    }
 
-        closeAgentBtn.addEventListener("click", () => {
-            agentModal.style.display = "none";
+    // Handle close button clicks for both modals
+    if (closeAgentBtns.length > 0) {
+        closeAgentBtns.forEach(closeBtn => {
+            closeBtn.addEventListener("click", () => {
+                // Close both modals
+                const agent1Modal = document.getElementById("agent1");
+                const agent2Modal = document.getElementById("agent2");
+                
+                if (agent1Modal) agent1Modal.style.display = "none";
+                if (agent2Modal) agent2Modal.style.display = "none";
+            });
         });
     }
-});
 
+    // Click outside to close modals
+    document.addEventListener('click', (e) => {
+        const agent1Modal = document.getElementById("agent1");
+        const agent2Modal = document.getElementById("agent2");
+        
+        // Close agent1 modal if clicking outside
+        if (agent1Modal && agent1Modal.style.display === 'flex' && 
+            !agent1Modal.querySelector('.agent-popup').contains(e.target)) {
+            agent1Modal.style.display = 'none';
+        }
+        
+        // Close agent2 modal if clicking outside
+        if (agent2Modal && agent2Modal.style.display === 'flex' && 
+            !agent2Modal.querySelector('.agent-popup').contains(e.target)) {
+            agent2Modal.style.display = 'none';
+        }
+    });
 
 // Essential Phone Validation and Call Code - Append to your existing JS
 
