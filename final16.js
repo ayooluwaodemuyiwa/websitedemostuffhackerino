@@ -578,3 +578,214 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+
+// Essential Phone Validation and Call Code - Append to your existing JS
+
+// Configuration
+const API_BASE_URL = 'https://triangular-poor-emulators-ayooluwa2.replit.app/'; // Replace with your Replit URL
+
+// Phone validation function
+async function validatePhone(phoneNumber) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/validate-phone`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phoneNumber })
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Phone validation error:', error);
+        return { valid: false, message: 'Unable to validate phone number' };
+    }
+}
+
+// Make the call function
+async function initiateCall(callData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/initiate-call`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(callData)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to initiate call');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Call initiation error:', error);
+        throw error;
+    }
+}
+
+// Format phone number as user types
+function formatPhoneInput(input) {
+    let value = input.value.replace(/\D/g, '');
+    
+    if (value.length > 0 && !value.startsWith('1') && value.length === 10) {
+        value = '1' + value;
+    }
+    
+    if (value.length >= 11) {
+        input.value = value.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1 ($2) $3-$4');
+    } else if (value.length >= 7) {
+        input.value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+    } else if (value.length >= 4) {
+        input.value = value.replace(/(\d{3})(\d{3})/, '($1) $2');
+    }
+    
+    return value;
+}
+
+// Show validation feedback
+function showValidationFeedback(input, result) {
+    const parent = input.closest('.form-group') || input.parentElement;
+    let feedback = parent.querySelector('.phone-feedback');
+    
+    if (!feedback) {
+        feedback = document.createElement('div');
+        feedback.className = 'phone-feedback';
+        feedback.style.cssText = `
+            font-size: 0.875rem; margin-top: 0.5rem; padding: 0.5rem;
+            border-radius: 4px; transition: all 0.3s ease;
+        `;
+        parent.appendChild(feedback);
+    }
+    
+    if (result.valid) {
+        feedback.textContent = `✓ Valid number from ${result.country || 'Unknown region'}`;
+        feedback.style.cssText += 'color: #52C41A; background: rgba(82, 196, 26, 0.1); border: 1px solid rgba(82, 196, 26, 0.3);';
+        input.style.borderColor = '#52C41A';
+    } else {
+        feedback.textContent = `✗ ${result.message}`;
+        feedback.style.cssText += 'color: #FF6B9D; background: rgba(255, 107, 157, 0.1); border: 1px solid rgba(255, 107, 157, 0.3);';
+        input.style.borderColor = '#FF6B9D';
+    }
+}
+
+// Show call status
+function showCallStatus(message, status, modalId) {
+    const modal = document.getElementById(modalId);
+    let statusElement = modal.querySelector('.call-status');
+    
+    if (!statusElement) {
+        statusElement = document.createElement('div');
+        statusElement.className = 'call-status';
+        statusElement.style.cssText = `
+            margin: 1rem 0; padding: 0.75rem; border-radius: 8px;
+            font-weight: 500; text-align: center; transition: all 0.3s ease;
+        `;
+        const form = modal.querySelector('.agent-form');
+        if (form) form.parentNode.insertBefore(statusElement, form);
+    }
+    
+    statusElement.textContent = message;
+    statusElement.className = `call-status ${status}`;
+    statusElement.style.display = 'block';
+    
+    // Add status colors
+    const colors = {
+        'initiated': 'background: rgba(46, 151, 157, 0.1); color: #2e979d; border: 1px solid rgba(46, 151, 157, 0.3);',
+        'ringing': 'background: rgba(46, 151, 157, 0.1); color: #2e979d; border: 1px solid rgba(46, 151, 157, 0.3);',
+        'answered': 'background: rgba(82, 196, 26, 0.1); color: #52C41A; border: 1px solid rgba(82, 196, 26, 0.3);',
+        'failed': 'background: rgba(255, 107, 157, 0.1); color: #FF6B9D; border: 1px solid rgba(255, 107, 157, 0.3);'
+    };
+    statusElement.style.cssText += colors[status] || colors.initiated;
+}
+
+// Handle form submission
+async function handleCallFormSubmit(form, agent, modalId) {
+    const name = form.querySelector('input[placeholder*="Name"]').value.trim();
+    const email = form.querySelector('input[type="email"]').value.trim();
+    const phone = form.querySelector('input[type="tel"]').value.trim();
+
+    // Validate required fields
+    if (!name || !email || !phone) {
+        showCallStatus('Please fill in all required fields.', 'failed', modalId);
+        return;
+    }
+
+    // Validate phone number
+    const phoneValidation = await validatePhone(phone);
+    if (!phoneValidation.valid) {
+        showCallStatus(`Invalid phone number: ${phoneValidation.message}`, 'failed', modalId);
+        return;
+    }
+
+    // Disable form during call
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const inputs = form.querySelectorAll('input, button');
+    inputs.forEach(input => input.disabled = true);
+    submitBtn.textContent = 'Initiating Call...';
+
+    showCallStatus('Initiating call...', 'initiated', modalId);
+
+    try {
+        const callData = {
+            name: name,
+            email: email,
+            phone: phoneValidation.e164,
+            agent: agent
+        };
+
+        const result = await initiateCall(callData);
+        showCallStatus(`Call initiated! You should receive a call at ${phoneValidation.formatted} in ${result.estimated_time}.`, 'answered', modalId);
+        
+        // Re-enable form after 3 seconds
+        setTimeout(() => {
+            inputs.forEach(input => input.disabled = false);
+            submitBtn.textContent = 'Get a Call';
+        }, 3000);
+
+    } catch (error) {
+        showCallStatus(`Failed to initiate call: ${error.message}`, 'failed', modalId);
+        inputs.forEach(input => input.disabled = false);
+        submitBtn.textContent = 'Get a Call';
+    }
+}
+
+// Setup phone input formatting and validation
+function setupPhoneInput(phoneInput) {
+    let debounceTimer;
+    
+    phoneInput.addEventListener('input', (e) => {
+        formatPhoneInput(e.target);
+        
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+            const cleaned = e.target.value.replace(/\D/g, '');
+            if (cleaned.length >= 10) {
+                const result = await validatePhone(e.target.value);
+                showValidationFeedback(phoneInput, result);
+            }
+        }, 500);
+    });
+}
+
+// Initialize for your existing modals
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup phone inputs in both modals
+    const phoneInputs = document.querySelectorAll('#agent1 input[type="tel"], #agent2 input[type="tel"]');
+    phoneInputs.forEach(setupPhoneInput);
+    
+    // Setup form submissions
+    const agent1Form = document.querySelector('#agent1 .agent-form');
+    const agent2Form = document.querySelector('#agent2 .agent-form');
+    
+    if (agent1Form) {
+        agent1Form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleCallFormSubmit(agent1Form, 'femi', 'agent1');
+        });
+    }
+    
+    if (agent2Form) {
+        agent2Form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleCallFormSubmit(agent2Form, 'sira', 'agent2');
+        });
+    }
+});
