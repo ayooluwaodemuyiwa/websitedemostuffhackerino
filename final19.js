@@ -630,8 +630,8 @@ const API_BASE_URL = 'https://triangular-poor-emulators-ayooluwa2.replit.app/'; 
 
 // Agent ID mapping
 const AGENT_IDS = {
-    'femi': 'FEMI_AGENT_ID', // Replace with actual Femi agent ID
-    'sira': 'SIRA_AGENT_ID'  // Replace with actual Sira agent ID
+    'femi': 'femi',  // This sends 'femi' to your backend
+    'sira': 'sira'   // This sends 'sira' to your backend
 };
 
 // Phone validation function
