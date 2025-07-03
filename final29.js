@@ -15,8 +15,8 @@
     };
 
     var grad3 = [new Grad(1, 1, 0), new Grad(-1, 1, 0), new Grad(1, -1, 0), new Grad(-1, -1, 0),
-        new Grad(1, 0, 1), new Grad(-1, 0, 1), new Grad(1, 0, -1), new Grad(-1, 0, -1),
-        new Grad(0, 1, 1), new Grad(0, -1, 1), new Grad(0, 1, -1), new Grad(0, -1, -1)];
+    new Grad(1, 0, 1), new Grad(-1, 0, 1), new Grad(1, 0, -1), new Grad(-1, 0, -1),
+    new Grad(0, 1, 1), new Grad(0, -1, 1), new Grad(0, 1, -1), new Grad(0, -1, -1)];
 
     var p = [151, 160, 137, 91, 90, 15,
         131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23,
@@ -31,7 +31,7 @@
         251, 34, 242, 193, 238, 210, 144, 12, 191, 179, 162, 241, 81, 51, 145, 235, 249, 14, 239, 107,
         49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254,
         138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180];
-    
+
     var perm = new Array(512);
     var gradP = new Array(512);
 
@@ -251,71 +251,108 @@ const AGENT_IDS = {
     'sira': 'sira'   // This sends 'sira' to your backend
 };
 
-// Phone validation function
 async function validatePhone(phoneNumber) {
     try {
+        console.log('Validating phone:', phoneNumber);
+
         const response = await fetch(`${API_BASE_URL}/validate-phone`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({ phone: phoneNumber })
         });
-        return await response.json();
+
+        console.log('Validation response status:', response.status);
+
+        if (!response.ok) {
+            console.error('Validation request failed:', response.status, response.statusText);
+            return { valid: false, message: 'Unable to validate phone number' };
+        }
+
+        const result = await response.json();
+        console.log('Validation result:', result);
+        return result;
+
     } catch (error) {
         console.error('Phone validation error:', error);
         return { valid: false, message: 'Unable to validate phone number' };
     }
 }
 
+
 // Make the call function with agent ID
 async function initiateCall(callData) {
     try {
+        console.log('Sending call request to:', `${API_BASE_URL}/initiate-call`);
+        console.log('Call data:', callData);
+
         const response = await fetch(`${API_BASE_URL}/initiate-call`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...callData,
-                agent_id: AGENT_IDS[callData.agent] // Pass the specific agent ID
-            })
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(callData)
         });
 
+        console.log('Call response status:', response.status);
+
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to initiate call');
+            const errorText = await response.text();
+            console.error('Call response error:', errorText);
+            let errorMessage = 'Failed to initiate call';
+
+            try {
+                const errorData = JSON.parse(errorText);
+                errorMessage = errorData.detail || errorMessage;
+            } catch (e) {
+                // If not JSON, use the text directly
+                errorMessage = errorText || errorMessage;
+            }
+
+            throw new Error(errorMessage);
         }
 
-        return await response.json();
+        const result = await response.json();
+        console.log('Call initiated successfully:', result);
+        return result;
+
     } catch (error) {
         console.error('Call initiation error:', error);
         throw error;
     }
 }
 
-// Enhanced phone number formatting with international support
+// Enhanced phone number formatting with better international support
 function formatPhoneInput(input) {
     let value = input.value.replace(/\D/g, '');
-    
-    // Auto-add country code for US numbers
-    if (value.length > 0 && !value.startsWith('1') && value.length === 10) {
-        value = '1' + value;
-    }
-    
-    // Format based on length
-    if (value.length >= 11) {
+
+    // Handle different international formats
+    if (value.startsWith('1') && value.length === 11) {
+        // US/Canada number with country code
         input.value = value.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1 ($2) $3-$4');
-    } else if (value.length >= 7) {
+    } else if (value.length === 10) {
+        // US number without country code
         input.value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-    } else if (value.length >= 4) {
-        input.value = value.replace(/(\d{3})(\d{3})/, '($1) $2');
+    } else if (value.length >= 7) {
+        // International or partial number
+        if (value.startsWith('1')) {
+            input.value = value.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1 ($2) $3-$4');
+        } else {
+            input.value = '+' + value;
+        }
     }
-    
+
     return value;
 }
 
 // Real-time validation feedback
 function showValidationFeedback(input, result) {
-    const parent = input.closest('.form-group') || input.parentElement;
+    const parent = input.closest('.form-group, .agent-form') || input.parentElement;
     let feedback = parent.querySelector('.phone-feedback');
-    
+
     if (!feedback) {
         feedback = document.createElement('div');
         feedback.className = 'phone-feedback';
@@ -329,9 +366,9 @@ function showValidationFeedback(input, result) {
             align-items: center;
             gap: 0.5rem;
         `;
-        parent.appendChild(feedback);
+        input.parentNode.insertBefore(feedback, input.nextSibling);
     }
-    
+
     if (result.valid) {
         feedback.innerHTML = `
             <span style="color: #52C41A;">✓</span>
@@ -339,7 +376,7 @@ function showValidationFeedback(input, result) {
         `;
         feedback.style.cssText += 'color: #52C41A; background: rgba(82, 196, 26, 0.1); border: 1px solid rgba(82, 196, 26, 0.3);';
         input.style.borderColor = '#52C41A';
-        input.style.boxShadow = '0 0 0 3px rgba(82, 196, 26, 0.1)';
+        input.style.boxShadow = '0 0 0 2px rgba(82, 196, 26, 0.1)';
     } else {
         feedback.innerHTML = `
             <span style="color: #FF6B9D;">✗</span>
@@ -347,7 +384,7 @@ function showValidationFeedback(input, result) {
         `;
         feedback.style.cssText += 'color: #FF6B9D; background: rgba(255, 107, 157, 0.1); border: 1px solid rgba(255, 107, 157, 0.3);';
         input.style.borderColor = '#FF6B9D';
-        input.style.boxShadow = '0 0 0 3px rgba(255, 107, 157, 0.1)';
+        input.style.boxShadow = '0 0 0 2px rgba(255, 107, 157, 0.1)';
     }
 }
 
@@ -355,9 +392,9 @@ function showValidationFeedback(input, result) {
 function showCallStatus(message, status, modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
-    
+
     let statusElement = modal.querySelector('.call-status');
-    
+
     if (!statusElement) {
         statusElement = document.createElement('div');
         statusElement.className = 'call-status';
@@ -376,14 +413,14 @@ function showCallStatus(message, status, modalId) {
         const form = modal.querySelector('.agent-form');
         if (form) form.parentNode.insertBefore(statusElement, form);
     }
-    
+
     // Add loading spinner for initiated status
     if (status === 'initiated') {
         statusElement.innerHTML = `
             <div style="width: 20px; height: 20px; border: 2px solid #2e979d; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
             <span>${message}</span>
         `;
-        
+
         // Add spinner animation
         if (!document.getElementById('spinner-style')) {
             const style = document.createElement('style');
@@ -399,10 +436,10 @@ function showCallStatus(message, status, modalId) {
     } else {
         statusElement.textContent = message;
     }
-    
+
     statusElement.className = `call-status ${status}`;
     statusElement.style.display = 'flex';
-    
+
     // Status-specific styling
     const colors = {
         'initiated': 'background: rgba(46, 151, 157, 0.1); color: #2e979d; border: 1px solid rgba(46, 151, 157, 0.3);',
@@ -413,7 +450,6 @@ function showCallStatus(message, status, modalId) {
     statusElement.style.cssText += colors[status] || colors.initiated;
 }
 
-// Main form submission handler
 async function handleCallFormSubmit(form, agent, modalId) {
     const name = form.querySelector('input[placeholder*="Name"]').value.trim();
     const email = form.querySelector('input[type="email"]').value.trim();
@@ -424,16 +460,18 @@ async function handleCallFormSubmit(form, agent, modalId) {
     if (existingStatus) existingStatus.remove();
 
     // Enhanced validation
-    if (!name) {
-        showCallStatus('Please enter your name.', 'failed', modalId);
+    if (!name || name.length < 2) {
+        showCallStatus('Please enter your full name.', 'failed', modalId);
         return;
     }
+
     if (!email) {
         showCallStatus('Please enter your email address.', 'failed', modalId);
         return;
     }
-    if (!phone) {
-        showCallStatus('Please enter your phone number.', 'failed', modalId);
+
+    if (!phone || phone.length < 10) {
+        showCallStatus('Please enter a valid phone number.', 'failed', modalId);
         return;
     }
 
@@ -447,7 +485,7 @@ async function handleCallFormSubmit(form, agent, modalId) {
     // Phone validation
     showCallStatus('Validating phone number...', 'initiated', modalId);
     const phoneValidation = await validatePhone(phone);
-    
+
     if (!phoneValidation.valid) {
         showCallStatus(`Invalid phone: ${phoneValidation.message}`, 'failed', modalId);
         return;
@@ -457,7 +495,7 @@ async function handleCallFormSubmit(form, agent, modalId) {
     const submitBtn = form.querySelector('button[type="submit"]');
     const inputs = form.querySelectorAll('input, button');
     inputs.forEach(input => input.disabled = true);
-    
+
     const originalBtnText = submitBtn.textContent;
     submitBtn.textContent = 'Calling...';
 
@@ -473,59 +511,67 @@ async function handleCallFormSubmit(form, agent, modalId) {
 
         console.log('Initiating call with data:', callData);
         const result = await initiateCall(callData);
-        
+
         showCallStatus(
-            `🎉 Call initiated! ${agent.charAt(0).toUpperCase() + agent.slice(1)} will call you at ${phoneValidation.formatted || phone} in about ${result.estimated_time || '30-60 seconds'}.`, 
-            'answered', 
+            `🎉 Call initiated! ${agent.charAt(0).toUpperCase() + agent.slice(1)} will call you at ${phoneValidation.formatted || phone} in about ${result.estimated_time || '30-60 seconds'}.`,
+            'answered',
             modalId
         );
-        
+
         // Reset form after successful call
         setTimeout(() => {
             inputs.forEach(input => input.disabled = false);
             submitBtn.textContent = originalBtnText;
             form.reset();
-            
+
             // Clear validation feedback
-            const feedback = form.querySelector('.phone-feedback');
+            const feedback = form.parentNode.querySelector('.phone-feedback');
             if (feedback) feedback.remove();
         }, 5000);
 
     } catch (error) {
         console.error('Call failed:', error);
         showCallStatus(`Failed to connect: ${error.message}`, 'failed', modalId);
-        
+
         // Re-enable form immediately on error
         inputs.forEach(input => input.disabled = false);
         submitBtn.textContent = originalBtnText;
     }
 }
 
+
 // Setup phone input with enhanced formatting
 function setupPhoneInput(phoneInput) {
     let debounceTimer;
-    
-    // Add placeholder and styling
-    phoneInput.placeholder = '+1 (555) 123-4567';
+
+    // Add better placeholder and styling
+    phoneInput.placeholder = '+1 (555) 123-4567 or +44 20 7946 0958';
     phoneInput.style.transition = 'all 0.3s ease';
-    
+
     phoneInput.addEventListener('input', (e) => {
         formatPhoneInput(e.target);
-        
-        // Clear existing validation
-        const feedback = e.target.parentElement.querySelector('.phone-feedback');
+
+        // Clear existing validation feedback
+        const feedback = e.target.closest('.form-group, .agent-form').querySelector('.phone-feedback');
         if (feedback) feedback.remove();
-        
+
+        // Reset input styling
+        e.target.style.borderColor = '';
+        e.target.style.boxShadow = '';
+
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
-            const cleaned = e.target.value.replace(/\D/g, '');
-            if (cleaned.length >= 10) {
-                const result = await validatePhone(e.target.value);
+            const phoneValue = e.target.value.trim();
+
+            // Only validate if we have a reasonable length
+            if (phoneValue.length >= 10) {
+                console.log('Attempting validation for:', phoneValue);
+                const result = await validatePhone(phoneValue);
                 showValidationFeedback(phoneInput, result);
             }
-        }, 800);
+        }, 1000); // Increased debounce time
     });
-    
+
     // Reset styling on focus
     phoneInput.addEventListener('focus', () => {
         phoneInput.style.borderColor = '';
@@ -534,7 +580,7 @@ function setupPhoneInput(phoneInput) {
 }
 
 // Initialize everything when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('Initializing complete voice agent system...');
 
     // Create floating particles
@@ -570,7 +616,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('scroll', () => {
         const nav = document.querySelector('nav');
         const navButton = document.querySelector('.nav-buttons .btn.btn-secondary');
-        
+
         if (nav) {
             if (window.scrollY > 50) {
                 nav.style.background = 'rgba(0, 0, 0, 0.4)';
@@ -639,15 +685,15 @@ document.addEventListener('DOMContentLoaded', function() {
             var elapsed = (time - start) / 1000;
             var dotSize = 3;
             var spacing = 20;
-            
+
             ctx2.fillStyle = "rgba(46, 151, 157, 0.6)";
-            
+
             for (var x = 0; x < w; x += spacing) {
                 for (var y = 0; y < h; y += spacing) {
                     var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
                     var alpha = Math.abs(noiseValue);
                     var size = dotSize + (noiseValue * 2);
-                    
+
                     if (alpha > 0.3) {
                         ctx2.globalAlpha = alpha;
                         ctx2.beginPath();
@@ -662,13 +708,13 @@ document.addEventListener('DOMContentLoaded', function() {
         function render(time) {
             // Clear screen with transparency instead of solid black
             ctx2.clearRect(0, 0, w, h);
-            
+
             // Draw animated dots
             drawDots(time);
-            
+
             // Draw sine wave
             drawSine(time, 10);
-            
+
             requestAnimationFrame(render);
         }
 
@@ -700,15 +746,15 @@ document.addEventListener('DOMContentLoaded', function() {
             var elapsed = (time - start2) / 1000;
             var dotSize = 3;
             var spacing = 20;
-            
+
             ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
-            
+
             for (var x = 0; x < w2; x += spacing) {
                 for (var y = 0; y < h2; y += spacing) {
                     var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
                     var alpha = Math.abs(noiseValue);
                     var size = dotSize + (noiseValue * 2);
-                    
+
                     if (alpha > 0.3) {
                         ctx.globalAlpha = alpha;
                         ctx.beginPath();
@@ -723,10 +769,10 @@ document.addEventListener('DOMContentLoaded', function() {
         function render2(time) {
             // Clear screen with transparency instead of solid black
             ctx.clearRect(0, 0, w2, h2);
-            
+
             // Draw animated dots
             drawDots2(time);
-            
+
             requestAnimationFrame(render2);
         }
 
@@ -762,140 +808,140 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // FIXED: Agent modal functionality for Femi and Sira
-   const demoCardGrid = document.querySelector('.demo-card-grid');
+    const demoCardGrid = document.querySelector('.demo-card-grid');
 
-if (demoCardGrid) {
-    // Get Femi and Sira buttons specifically
-    const femiDiv = demoCardGrid.children[0]; // First div in grid
-    const siraDiv = demoCardGrid.children[1]; // Second div in grid
-    
-    const femiButton = femiDiv ? femiDiv.querySelector('.play-button') : null;
-    const siraButton = siraDiv ? siraDiv.querySelector('.play-button') : null;
-    
-    console.log('Femi button found:', !!femiButton);
-    console.log('Sira button found:', !!siraButton);
+    if (demoCardGrid) {
+        // Get Femi and Sira buttons specifically
+        const femiDiv = demoCardGrid.children[0]; // First div in grid
+        const siraDiv = demoCardGrid.children[1]; // Second div in grid
 
-    // Handle Femi button click
-    if (femiButton) {
-        femiButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Femi button clicked');
-            const modal = document.getElementById('agent1');
-            if (modal) {
-                modal.style.display = 'flex';
-                modal.style.visibility = 'visible';
-                modal.style.opacity = '1';
-                modal.classList.add('show');
-                console.log('Femi modal opened - style applied');
-                
-                // Force reflow
-                modal.offsetHeight;
-                
-                // Debug: Check computed styles
-                const computedStyle = window.getComputedStyle(modal);
-                console.log('Modal display:', computedStyle.display);
-                console.log('Modal visibility:', computedStyle.visibility);
-                console.log('Modal opacity:', computedStyle.opacity);
-                console.log('Modal z-index:', computedStyle.zIndex);
-            } else {
-                console.log('agent1 modal not found');
-            }
-        });
+        const femiButton = femiDiv ? femiDiv.querySelector('.play-button') : null;
+        const siraButton = siraDiv ? siraDiv.querySelector('.play-button') : null;
+
+        console.log('Femi button found:', !!femiButton);
+        console.log('Sira button found:', !!siraButton);
+
+        // Handle Femi button click
+        if (femiButton) {
+            femiButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Femi button clicked');
+                const modal = document.getElementById('agent1');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    modal.style.visibility = 'visible';
+                    modal.style.opacity = '1';
+                    modal.classList.add('show');
+                    console.log('Femi modal opened - style applied');
+
+                    // Force reflow
+                    modal.offsetHeight;
+
+                    // Debug: Check computed styles
+                    const computedStyle = window.getComputedStyle(modal);
+                    console.log('Modal display:', computedStyle.display);
+                    console.log('Modal visibility:', computedStyle.visibility);
+                    console.log('Modal opacity:', computedStyle.opacity);
+                    console.log('Modal z-index:', computedStyle.zIndex);
+                } else {
+                    console.log('agent1 modal not found');
+                }
+            });
+        }
+
+        // Handle Sira button click
+        if (siraButton) {
+            siraButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Sira button clicked');
+                const modal = document.getElementById('agent2');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    modal.style.visibility = 'visible';
+                    modal.style.opacity = '1';
+                    modal.classList.add('show');
+                    console.log('Sira modal opened - style applied');
+
+                    // Force reflow
+                    modal.offsetHeight;
+
+                    // Debug: Check computed styles
+                    const computedStyle = window.getComputedStyle(modal);
+                    console.log('Modal display:', computedStyle.display);
+                    console.log('Modal visibility:', computedStyle.visibility);
+                    console.log('Modal opacity:', computedStyle.opacity);
+                    console.log('Modal z-index:', computedStyle.zIndex);
+                } else {
+                    console.log('agent2 modal not found');
+                }
+            });
+        }
     }
 
-    // Handle Sira button click
-    if (siraButton) {
-        siraButton.addEventListener('click', (e) => {
+    // Handle close button clicks for both modals
+    const closeAgentBtns = document.querySelectorAll('.close-agent-popup');
+    closeAgentBtns.forEach(closeBtn => {
+        closeBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Sira button clicked');
-            const modal = document.getElementById('agent2');
-            if (modal) {
-                modal.style.display = 'flex';
-                modal.style.visibility = 'visible';
-                modal.style.opacity = '1';
-                modal.classList.add('show');
-                console.log('Sira modal opened - style applied');
-                
-                // Force reflow
-                modal.offsetHeight;
-                
-                // Debug: Check computed styles
-                const computedStyle = window.getComputedStyle(modal);
-                console.log('Modal display:', computedStyle.display);
-                console.log('Modal visibility:', computedStyle.visibility);
-                console.log('Modal opacity:', computedStyle.opacity);
-                console.log('Modal z-index:', computedStyle.zIndex);
-            } else {
-                console.log('agent2 modal not found');
+            console.log('Close button clicked');
+            const agent1Modal = document.getElementById('agent1');
+            const agent2Modal = document.getElementById('agent2');
+
+            if (agent1Modal) {
+                agent1Modal.style.display = 'none';
+                agent1Modal.style.visibility = 'hidden';
+                agent1Modal.style.opacity = '0';
+                agent1Modal.classList.remove('show');
+            }
+            if (agent2Modal) {
+                agent2Modal.style.display = 'none';
+                agent2Modal.style.visibility = 'hidden';
+                agent2Modal.style.opacity = '0';
+                agent2Modal.classList.remove('show');
             }
         });
-    }
-}
+    });
 
-// Handle close button clicks for both modals
-const closeAgentBtns = document.querySelectorAll('.close-agent-popup');
-closeAgentBtns.forEach(closeBtn => {
-    closeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('Close button clicked');
+    // Click outside to close modals
+    document.addEventListener('click', (e) => {
         const agent1Modal = document.getElementById('agent1');
         const agent2Modal = document.getElementById('agent2');
-        
-        if (agent1Modal) {
+
+        if (agent1Modal && agent1Modal.classList.contains('show') &&
+            !agent1Modal.querySelector('.agent-popup').contains(e.target)) {
             agent1Modal.style.display = 'none';
             agent1Modal.style.visibility = 'hidden';
             agent1Modal.style.opacity = '0';
             agent1Modal.classList.remove('show');
         }
-        if (agent2Modal) {
+
+        if (agent2Modal && agent2Modal.classList.contains('show') &&
+            !agent2Modal.querySelector('.agent-popup').contains(e.target)) {
             agent2Modal.style.display = 'none';
             agent2Modal.style.visibility = 'hidden';
             agent2Modal.style.opacity = '0';
             agent2Modal.classList.remove('show');
         }
     });
-});
-
-// Click outside to close modals
-document.addEventListener('click', (e) => {
-    const agent1Modal = document.getElementById('agent1');
-    const agent2Modal = document.getElementById('agent2');
-    
-    if (agent1Modal && agent1Modal.classList.contains('show') && 
-        !agent1Modal.querySelector('.agent-popup').contains(e.target)) {
-        agent1Modal.style.display = 'none';
-        agent1Modal.style.visibility = 'hidden';
-        agent1Modal.style.opacity = '0';
-        agent1Modal.classList.remove('show');
-    }
-    
-    if (agent2Modal && agent2Modal.classList.contains('show') && 
-        !agent2Modal.querySelector('.agent-popup').contains(e.target)) {
-        agent2Modal.style.display = 'none';
-        agent2Modal.style.visibility = 'hidden';
-        agent2Modal.style.opacity = '0';
-        agent2Modal.classList.remove('show');
-    }
-});
 
     // Setup phone inputs in both modals
     const phoneInputs = document.querySelectorAll('#agent1 input[type="tel"], #agent2 input[type="tel"]');
     phoneInputs.forEach(setupPhoneInput);
-    
+
     // Setup form submissions with proper agent mapping
     const agent1Form = document.querySelector('#agent1 .agent-form');
     const agent2Form = document.querySelector('#agent2 .agent-form');
-    
+
     if (agent1Form) {
         agent1Form.addEventListener('submit', (e) => {
             e.preventDefault();
             handleCallFormSubmit(agent1Form, 'femi', 'agent1');
         });
     }
-    
+
     if (agent2Form) {
         agent2Form.addEventListener('submit', (e) => {
             e.preventDefault();
