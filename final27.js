@@ -243,7 +243,7 @@
 })(this);
 
 // Configuration
-const API_BASE_URL = 'https://fly.io/apps/replit-cors-proxy2'; // Replace with your Replit URL
+const API_BASE_URL = "https://replit-cors-proxy2.fly.dev/proxy"; // Replace with your Replit URL
 
 // Agent ID mapping
 const AGENT_IDS = {
