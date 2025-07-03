@@ -623,9 +623,16 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 // Essential Phone Validation and Call Code - Append to your existing JS
+// Essential Phone Validation and Call Code - Replace your existing calling code with this
 
 // Configuration
 const API_BASE_URL = 'https://triangular-poor-emulators-ayooluwa2.replit.app/'; // Replace with your Replit URL
+
+// Agent ID mapping
+const AGENT_IDS = {
+    'femi': 'FEMI_AGENT_ID', // Replace with actual Femi agent ID
+    'sira': 'SIRA_AGENT_ID'  // Replace with actual Sira agent ID
+};
 
 // Phone validation function
 async function validatePhone(phoneNumber) {
@@ -642,13 +649,16 @@ async function validatePhone(phoneNumber) {
     }
 }
 
-// Make the call function
+// Make the call function with agent ID
 async function initiateCall(callData) {
     try {
         const response = await fetch(`${API_BASE_URL}/initiate-call`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(callData)
+            body: JSON.stringify({
+                ...callData,
+                agent_id: AGENT_IDS[callData.agent] // Pass the specific agent ID
+            })
         });
 
         if (!response.ok) {
@@ -663,14 +673,16 @@ async function initiateCall(callData) {
     }
 }
 
-// Format phone number as user types
+// Enhanced phone number formatting with international support
 function formatPhoneInput(input) {
     let value = input.value.replace(/\D/g, '');
     
+    // Auto-add country code for US numbers
     if (value.length > 0 && !value.startsWith('1') && value.length === 10) {
         value = '1' + value;
     }
     
+    // Format based on length
     if (value.length >= 11) {
         input.value = value.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1 ($2) $3-$4');
     } else if (value.length >= 7) {
@@ -682,7 +694,7 @@ function formatPhoneInput(input) {
     return value;
 }
 
-// Show validation feedback
+// Real-time validation feedback
 function showValidationFeedback(input, result) {
     const parent = input.closest('.form-group') || input.parentElement;
     let feedback = parent.querySelector('.phone-feedback');
@@ -691,24 +703,38 @@ function showValidationFeedback(input, result) {
         feedback = document.createElement('div');
         feedback.className = 'phone-feedback';
         feedback.style.cssText = `
-            font-size: 0.875rem; margin-top: 0.5rem; padding: 0.5rem;
-            border-radius: 4px; transition: all 0.3s ease;
+            font-size: 0.875rem; 
+            margin-top: 0.5rem; 
+            padding: 0.5rem;
+            border-radius: 4px; 
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         `;
         parent.appendChild(feedback);
     }
     
     if (result.valid) {
-        feedback.textContent = `✓ Valid number from ${result.country || 'Unknown region'}`;
+        feedback.innerHTML = `
+            <span style="color: #52C41A;">✓</span>
+            <span>Valid ${result.country || 'number'} - Ready to call!</span>
+        `;
         feedback.style.cssText += 'color: #52C41A; background: rgba(82, 196, 26, 0.1); border: 1px solid rgba(82, 196, 26, 0.3);';
         input.style.borderColor = '#52C41A';
+        input.style.boxShadow = '0 0 0 3px rgba(82, 196, 26, 0.1)';
     } else {
-        feedback.textContent = `✗ ${result.message}`;
+        feedback.innerHTML = `
+            <span style="color: #FF6B9D;">✗</span>
+            <span>${result.message}</span>
+        `;
         feedback.style.cssText += 'color: #FF6B9D; background: rgba(255, 107, 157, 0.1); border: 1px solid rgba(255, 107, 157, 0.3);';
         input.style.borderColor = '#FF6B9D';
+        input.style.boxShadow = '0 0 0 3px rgba(255, 107, 157, 0.1)';
     }
 }
 
-// Show call status
+// Enhanced call status with loading states
 function showCallStatus(message, status, modalId) {
     const modal = document.getElementById(modalId);
     let statusElement = modal.querySelector('.call-status');
@@ -717,43 +743,91 @@ function showCallStatus(message, status, modalId) {
         statusElement = document.createElement('div');
         statusElement.className = 'call-status';
         statusElement.style.cssText = `
-            margin: 1rem 0; padding: 0.75rem; border-radius: 8px;
-            font-weight: 500; text-align: center; transition: all 0.3s ease;
+            margin: 1rem 0; 
+            padding: 1rem; 
+            border-radius: 8px;
+            font-weight: 500; 
+            text-align: center; 
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         `;
         const form = modal.querySelector('.agent-form');
         if (form) form.parentNode.insertBefore(statusElement, form);
     }
     
-    statusElement.textContent = message;
-    statusElement.className = `call-status ${status}`;
-    statusElement.style.display = 'block';
+    // Add loading spinner for initiated status
+    if (status === 'initiated') {
+        statusElement.innerHTML = `
+            <div style="width: 20px; height: 20px; border: 2px solid #2e979d; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <span>${message}</span>
+        `;
+        
+        // Add spinner animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    } else {
+        statusElement.textContent = message;
+    }
     
-    // Add status colors
+    statusElement.className = `call-status ${status}`;
+    statusElement.style.display = 'flex';
+    
+    // Status-specific styling
     const colors = {
         'initiated': 'background: rgba(46, 151, 157, 0.1); color: #2e979d; border: 1px solid rgba(46, 151, 157, 0.3);',
-        'ringing': 'background: rgba(46, 151, 157, 0.1); color: #2e979d; border: 1px solid rgba(46, 151, 157, 0.3);',
+        'ringing': 'background: rgba(255, 193, 7, 0.1); color: #856404; border: 1px solid rgba(255, 193, 7, 0.3);',
         'answered': 'background: rgba(82, 196, 26, 0.1); color: #52C41A; border: 1px solid rgba(82, 196, 26, 0.3);',
         'failed': 'background: rgba(255, 107, 157, 0.1); color: #FF6B9D; border: 1px solid rgba(255, 107, 157, 0.3);'
     };
     statusElement.style.cssText += colors[status] || colors.initiated;
 }
 
-// Handle form submission
+// Main form submission handler
 async function handleCallFormSubmit(form, agent, modalId) {
     const name = form.querySelector('input[placeholder*="Name"]').value.trim();
     const email = form.querySelector('input[type="email"]').value.trim();
     const phone = form.querySelector('input[type="tel"]').value.trim();
 
-    // Validate required fields
-    if (!name || !email || !phone) {
-        showCallStatus('Please fill in all required fields.', 'failed', modalId);
+    // Clear previous status
+    const existingStatus = form.parentNode.querySelector('.call-status');
+    if (existingStatus) existingStatus.remove();
+
+    // Enhanced validation
+    if (!name) {
+        showCallStatus('Please enter your name.', 'failed', modalId);
+        return;
+    }
+    if (!email) {
+        showCallStatus('Please enter your email address.', 'failed', modalId);
+        return;
+    }
+    if (!phone) {
+        showCallStatus('Please enter your phone number.', 'failed', modalId);
         return;
     }
 
-    // Validate phone number
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showCallStatus('Please enter a valid email address.', 'failed', modalId);
+        return;
+    }
+
+    // Phone validation
+    showCallStatus('Validating phone number...', 'initiated', modalId);
     const phoneValidation = await validatePhone(phone);
+    
     if (!phoneValidation.valid) {
-        showCallStatus(`Invalid phone number: ${phoneValidation.message}`, 'failed', modalId);
+        showCallStatus(`Invalid phone: ${phoneValidation.message}`, 'failed', modalId);
         return;
     }
 
@@ -761,40 +835,64 @@ async function handleCallFormSubmit(form, agent, modalId) {
     const submitBtn = form.querySelector('button[type="submit"]');
     const inputs = form.querySelectorAll('input, button');
     inputs.forEach(input => input.disabled = true);
-    submitBtn.textContent = 'Initiating Call...';
+    
+    const originalBtnText = submitBtn.textContent;
+    submitBtn.textContent = 'Calling...';
 
-    showCallStatus('Initiating call...', 'initiated', modalId);
+    showCallStatus(`Connecting you with ${agent.charAt(0).toUpperCase() + agent.slice(1)}...`, 'initiated', modalId);
 
     try {
         const callData = {
             name: name,
             email: email,
-            phone: phoneValidation.e164,
-            agent: agent
+            phone: phoneValidation.e164 || phoneValidation.formatted || phone,
+            agent: agent.toLowerCase()
         };
 
+        console.log('Initiating call with data:', callData);
         const result = await initiateCall(callData);
-        showCallStatus(`Call initiated! You should receive a call at ${phoneValidation.formatted} in ${result.estimated_time}.`, 'answered', modalId);
         
-        // Re-enable form after 3 seconds
+        showCallStatus(
+            `🎉 Call initiated! ${agent.charAt(0).toUpperCase() + agent.slice(1)} will call you at ${phoneValidation.formatted || phone} in about ${result.estimated_time || '30-60 seconds'}.`, 
+            'answered', 
+            modalId
+        );
+        
+        // Reset form after successful call
         setTimeout(() => {
             inputs.forEach(input => input.disabled = false);
-            submitBtn.textContent = 'Get a Call';
-        }, 3000);
+            submitBtn.textContent = originalBtnText;
+            form.reset();
+            
+            // Clear validation feedback
+            const feedback = form.querySelector('.phone-feedback');
+            if (feedback) feedback.remove();
+        }, 5000);
 
     } catch (error) {
-        showCallStatus(`Failed to initiate call: ${error.message}`, 'failed', modalId);
+        console.error('Call failed:', error);
+        showCallStatus(`Failed to connect: ${error.message}`, 'failed', modalId);
+        
+        // Re-enable form immediately on error
         inputs.forEach(input => input.disabled = false);
-        submitBtn.textContent = 'Get a Call';
+        submitBtn.textContent = originalBtnText;
     }
 }
 
-// Setup phone input formatting and validation
+// Setup phone input with enhanced formatting
 function setupPhoneInput(phoneInput) {
     let debounceTimer;
     
+    // Add placeholder and styling
+    phoneInput.placeholder = '+1 (555) 123-4567';
+    phoneInput.style.transition = 'all 0.3s ease';
+    
     phoneInput.addEventListener('input', (e) => {
         formatPhoneInput(e.target);
+        
+        // Clear existing validation
+        const feedback = e.target.parentElement.querySelector('.phone-feedback');
+        if (feedback) feedback.remove();
         
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
@@ -803,17 +901,23 @@ function setupPhoneInput(phoneInput) {
                 const result = await validatePhone(e.target.value);
                 showValidationFeedback(phoneInput, result);
             }
-        }, 500);
+        }, 800); // Slightly longer debounce for better UX
+    });
+    
+    // Reset styling on focus
+    phoneInput.addEventListener('focus', () => {
+        phoneInput.style.borderColor = '';
+        phoneInput.style.boxShadow = '';
     });
 }
 
-// Initialize for your existing modals
+// Enhanced initialization for your existing modals
 document.addEventListener('DOMContentLoaded', function() {
     // Setup phone inputs in both modals
     const phoneInputs = document.querySelectorAll('#agent1 input[type="tel"], #agent2 input[type="tel"]');
     phoneInputs.forEach(setupPhoneInput);
     
-    // Setup form submissions
+    // Setup form submissions with proper agent mapping
     const agent1Form = document.querySelector('#agent1 .agent-form');
     const agent2Form = document.querySelector('#agent2 .agent-form');
     
@@ -830,4 +934,7 @@ document.addEventListener('DOMContentLoaded', function() {
             handleCallFormSubmit(agent2Form, 'sira', 'agent2');
         });
     }
-});})
+
+    console.log('Enhanced voice agent calling system initialized');
+    console.log('Agent IDs configured:', AGENT_IDS);
+});
