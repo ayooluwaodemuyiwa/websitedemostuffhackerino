@@ -762,76 +762,124 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // FIXED: Agent modal functionality for Femi and Sira
-    const demoCardGrid = document.querySelector('.demo-card-grid');
+   const demoCardGrid = document.querySelector('.demo-card-grid');
+
+if (demoCardGrid) {
+    // Get Femi and Sira buttons specifically
+    const femiDiv = demoCardGrid.children[0]; // First div in grid
+    const siraDiv = demoCardGrid.children[1]; // Second div in grid
     
-    if (demoCardGrid) {
-        // Get Femi and Sira buttons specifically
-        const femiDiv = demoCardGrid.children[0]; // First div in grid
-        const siraDiv = demoCardGrid.children[1]; // Second div in grid
-        
-        const femiButton = femiDiv ? femiDiv.querySelector('.play-button') : null;
-        const siraButton = siraDiv ? siraDiv.querySelector('.play-button') : null;
-        
-        console.log('Femi button found:', !!femiButton);
-        console.log('Sira button found:', !!siraButton);
+    const femiButton = femiDiv ? femiDiv.querySelector('.play-button') : null;
+    const siraButton = siraDiv ? siraDiv.querySelector('.play-button') : null;
+    
+    console.log('Femi button found:', !!femiButton);
+    console.log('Sira button found:', !!siraButton);
 
-        // Handle Femi button click
-        if (femiButton) {
-            femiButton.addEventListener('click', () => {
-                console.log('Femi button clicked');
-                const modal = document.getElementById('agent1');
-                if (modal) {
-                    modal.style.display = 'flex';
-                    console.log('Femi modal opened');
-                } else {
-                    console.log('agent1 modal not found');
-                }
-            });
-        }
-
-        // Handle Sira button click
-        if (siraButton) {
-            siraButton.addEventListener('click', () => {
-                console.log('Sira button clicked');
-                const modal = document.getElementById('agent2');
-                if (modal) {
-                    modal.style.display = 'flex';
-                    console.log('Sira modal opened');
-                } else {
-                    console.log('agent2 modal not found');
-                }
-            });
-        }
+    // Handle Femi button click
+    if (femiButton) {
+        femiButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Femi button clicked');
+            const modal = document.getElementById('agent1');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+                modal.style.opacity = '1';
+                modal.classList.add('show');
+                console.log('Femi modal opened - style applied');
+                
+                // Force reflow
+                modal.offsetHeight;
+                
+                // Debug: Check computed styles
+                const computedStyle = window.getComputedStyle(modal);
+                console.log('Modal display:', computedStyle.display);
+                console.log('Modal visibility:', computedStyle.visibility);
+                console.log('Modal opacity:', computedStyle.opacity);
+                console.log('Modal z-index:', computedStyle.zIndex);
+            } else {
+                console.log('agent1 modal not found');
+            }
+        });
     }
 
-    // Handle close button clicks for both modals
-    const closeAgentBtns = document.querySelectorAll('.close-agent-popup');
-    closeAgentBtns.forEach(closeBtn => {
-        closeBtn.addEventListener('click', () => {
-            console.log('Close button clicked');
-            const agent1Modal = document.getElementById('agent1');
-            const agent2Modal = document.getElementById('agent2');
-            
-            if (agent1Modal) agent1Modal.style.display = 'none';
-            if (agent2Modal) agent2Modal.style.display = 'none';
+    // Handle Sira button click
+    if (siraButton) {
+        siraButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Sira button clicked');
+            const modal = document.getElementById('agent2');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.visibility = 'visible';
+                modal.style.opacity = '1';
+                modal.classList.add('show');
+                console.log('Sira modal opened - style applied');
+                
+                // Force reflow
+                modal.offsetHeight;
+                
+                // Debug: Check computed styles
+                const computedStyle = window.getComputedStyle(modal);
+                console.log('Modal display:', computedStyle.display);
+                console.log('Modal visibility:', computedStyle.visibility);
+                console.log('Modal opacity:', computedStyle.opacity);
+                console.log('Modal z-index:', computedStyle.zIndex);
+            } else {
+                console.log('agent2 modal not found');
+            }
         });
-    });
+    }
+}
 
-    // Click outside to close modals
-    document.addEventListener('click', (e) => {
+// Handle close button clicks for both modals
+const closeAgentBtns = document.querySelectorAll('.close-agent-popup');
+closeAgentBtns.forEach(closeBtn => {
+    closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Close button clicked');
         const agent1Modal = document.getElementById('agent1');
         const agent2Modal = document.getElementById('agent2');
         
-        if (agent1Modal && agent1Modal.style.display === 'flex' && 
-            !agent1Modal.querySelector('.agent-popup').contains(e.target)) {
+        if (agent1Modal) {
             agent1Modal.style.display = 'none';
+            agent1Modal.style.visibility = 'hidden';
+            agent1Modal.style.opacity = '0';
+            agent1Modal.classList.remove('show');
         }
-        
-        if (agent2Modal && agent2Modal.style.display === 'flex' && 
-            !agent2Modal.querySelector('.agent-popup').contains(e.target)) {
+        if (agent2Modal) {
             agent2Modal.style.display = 'none';
+            agent2Modal.style.visibility = 'hidden';
+            agent2Modal.style.opacity = '0';
+            agent2Modal.classList.remove('show');
         }
     });
+});
+
+// Click outside to close modals
+document.addEventListener('click', (e) => {
+    const agent1Modal = document.getElementById('agent1');
+    const agent2Modal = document.getElementById('agent2');
+    
+    if (agent1Modal && agent1Modal.classList.contains('show') && 
+        !agent1Modal.querySelector('.agent-popup').contains(e.target)) {
+        agent1Modal.style.display = 'none';
+        agent1Modal.style.visibility = 'hidden';
+        agent1Modal.style.opacity = '0';
+        agent1Modal.classList.remove('show');
+    }
+    
+    if (agent2Modal && agent2Modal.classList.contains('show') && 
+        !agent2Modal.querySelector('.agent-popup').contains(e.target)) {
+        agent2Modal.style.display = 'none';
+        agent2Modal.style.visibility = 'hidden';
+        agent2Modal.style.opacity = '0';
+        agent2Modal.classList.remove('show');
+    }
+});
 
     // Setup phone inputs in both modals
     const phoneInputs = document.querySelectorAll('#agent1 input[type="tel"], #agent2 input[type="tel"]');
