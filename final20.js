@@ -15,8 +15,8 @@
     };
 
     var grad3 = [new Grad(1, 1, 0), new Grad(-1, 1, 0), new Grad(1, -1, 0), new Grad(-1, -1, 0),
-        new Grad(1, 0, 1), new Grad(-1, 0, 1), new Grad(1, 0, -1), new Grad(-1, 0, -1),
-        new Grad(0, 1, 1), new Grad(0, -1, 1), new Grad(0, 1, -1), new Grad(0, -1, -1)];
+    new Grad(1, 0, 1), new Grad(-1, 0, 1), new Grad(1, 0, -1), new Grad(-1, 0, -1),
+    new Grad(0, 1, 1), new Grad(0, -1, 1), new Grad(0, 1, -1), new Grad(0, -1, -1)];
 
     var p = [151, 160, 137, 91, 90, 15,
         131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99, 37, 240, 21, 10, 23,
@@ -31,7 +31,7 @@
         251, 34, 242, 193, 238, 210, 144, 12, 191, 179, 162, 241, 81, 51, 145, 235, 249, 14, 239, 107,
         49, 192, 214, 31, 181, 199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254,
         138, 236, 205, 93, 222, 114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180];
-    
+
     var perm = new Array(512);
     var gradP = new Array(512);
 
@@ -257,7 +257,7 @@ class ElevenLabsVoiceIntegration {
 
     setupVoiceAgents() {
         const agents = ['femi', 'sira'];
-        
+
         agents.forEach(agent => {
             this.isConversationActive[agent] = false;
             console.log(`Setting up ${agent} voice agent`);
@@ -276,7 +276,7 @@ class ElevenLabsVoiceIntegration {
 
     handleVoiceAgentDemo(agent) {
         console.log(`${agent.charAt(0).toUpperCase() + agent.slice(1)} voice agent demo clicked`);
-        
+
         const widget = this.widgets[agent];
         if (widget && widget.shadowRoot) {
             const startBtn = widget.shadowRoot.querySelector('button');
@@ -298,7 +298,7 @@ class ElevenLabsVoiceIntegration {
     updateButtonState(agent, isActive) {
         const playButtons = document.querySelectorAll('.play-button');
         const buttonIndex = agent === 'femi' ? 1 : 2; // Femi is button 1, Sira is button 2
-        
+
         if (playButtons[buttonIndex]) {
             const button = playButtons[buttonIndex];
             if (isActive) {
@@ -315,7 +315,7 @@ class ElevenLabsVoiceIntegration {
 }
 
 // Initialize everything when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Create floating particles
     const particlesContainer = document.getElementById('particles');
     if (particlesContainer) {
@@ -344,283 +344,284 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+});
 
-    // Navbar background on scroll
-    window.addEventListener('scroll', () => {
-        const nav = document.querySelector('nav');
-        const navButton = document.querySelector('.nav-buttons .btn.btn-secondary');
-        
-        if (nav) {
-            if (window.scrollY > 50) {
-                nav.style.background = 'rgba(0, 0, 0, 0.4)';
-                nav.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
-                if (navButton) {
-                    navButton.style.color = 'white';
-                    navButton.style.borderColor = 'white';
-                }
-            } else {
-                nav.style.background = 'rgba(0, 0, 0, 0.75)';
-                nav.style.boxShadow = 'none';
+// Navbar background on scroll
+window.addEventListener('scroll', () => {
+    const nav = document.querySelector('nav');
+    const navButton = document.querySelector('.nav-buttons .btn.btn-secondary');
+
+    if (nav) {
+        if (window.scrollY > 50) {
+            nav.style.background = 'rgba(0, 0, 0, 0.4)';
+            nav.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
+            if (navButton) {
+                navButton.style.color = 'white';
+                navButton.style.borderColor = 'white';
             }
+        } else {
+            nav.style.background = 'rgba(0, 0, 0, 0.75)';
+            nav.style.boxShadow = 'none';
         }
-    });
-
-    // Pause team scroll on hover
-    const teamScroll = document.querySelector('.team-scroll');
-    if (teamScroll) {
-        teamScroll.addEventListener('mouseenter', () => {
-            teamScroll.style.animationPlayState = 'paused';
-        });
-        teamScroll.addEventListener('mouseleave', () => {
-            teamScroll.style.animationPlayState = 'running';
-        });
     }
+});
 
-    // Canvas animation - Enhanced version with both sine wave and dots
-    const hero_canvas = document.getElementById("hero-canvas");
-    if (hero_canvas) {
-        var w = window.innerWidth;
-        var h = window.innerHeight;
+// Pause team scroll on hover
+const teamScroll = document.querySelector('.team-scroll');
+if (teamScroll) {
+    teamScroll.addEventListener('mouseenter', () => {
+        teamScroll.style.animationPlayState = 'paused';
+    });
+    teamScroll.addEventListener('mouseleave', () => {
+        teamScroll.style.animationPlayState = 'running';
+    });
+}
 
-        var ctx2 = hero_canvas.getContext("2d");
+// Canvas animation - Enhanced version with both sine wave and dots
+const hero_canvas = document.getElementById("hero-canvas");
+if (hero_canvas) {
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+
+    var ctx2 = hero_canvas.getContext("2d");
+    ctx2.canvas.width = w;
+    ctx2.canvas.height = h;
+
+    var start = performance.now();
+
+    window.onresize = function () {
+        w = window.innerWidth;
+        h = window.innerHeight;
         ctx2.canvas.width = w;
         ctx2.canvas.height = h;
-
-        var start = performance.now();
-
-        window.onresize = function () {
-            w = window.innerWidth;
-            h = window.innerHeight;
-            ctx2.canvas.width = w;
-            ctx2.canvas.height = h;
-        };
-
-        function drawSine(time, angular_freq) {
-            ctx2.beginPath();
-            ctx2.strokeStyle = "rgba(46, 151, 157, 1)";
-
-            var elapsed = (time - start) / 1000;
-            var phase_angle = elapsed * 2;
-
-            var x, y, amplitude;
-            for (x = 0; x < w; x++) {
-                amplitude = noise.perlin2(x / 100, elapsed) * 200;
-                amplitude *= Math.sin(x * 2) * 3;
-                y = amplitude * Math.sin(x * angular_freq + phase_angle);
-                ctx2.lineTo(x, y + h / 2);
-            }
-
-            ctx2.stroke();
-            ctx2.closePath();
-        }
-
-        function drawDots(time) {
-            var elapsed = (time - start) / 1000;
-            var dotSize = 3;
-            var spacing = 20;
-            
-            ctx2.fillStyle = "rgba(46, 151, 157, 0.6)";
-            
-            for (var x = 0; x < w; x += spacing) {
-                for (var y = 0; y < h; y += spacing) {
-                    var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
-                    var alpha = Math.abs(noiseValue);
-                    var size = dotSize + (noiseValue * 2);
-                    
-                    if (alpha > 0.3) {
-                        ctx2.globalAlpha = alpha;
-                        ctx2.beginPath();
-                        ctx2.arc(x, y, size, 0, Math.PI * 2);
-                        ctx2.fill();
-                    }
-                }
-            }
-            ctx2.globalAlpha = 1;
-        }
-
-        function render(time) {
-            // Clear screen with transparency instead of solid black
-            ctx2.clearRect(0, 0, w, h);
-            
-            // Draw animated dots
-            drawDots(time);
-            
-            // Draw sine wave
-            drawSine(time, 10);
-            
-            requestAnimationFrame(render);
-        }
-
-        // Initialize noise and start rendering
-        noise.seed(Math.random());
-        render();
-    }
-
-    // Second canvas animation (dots only)
-    const canvas = document.getElementById("canvas");
-    if (canvas) {
-        var w2 = window.innerWidth;
-        var h2 = window.innerHeight;
-
-        var ctx = canvas.getContext("2d");
-        ctx.canvas.width = w2;
-        ctx.canvas.height = h2;
-
-        var start2 = performance.now();
-
-        window.addEventListener('resize', function () {
-            w2 = window.innerWidth;
-            h2 = window.innerHeight;
-            ctx.canvas.width = w2;
-            ctx.canvas.height = h2;
-        });
-
-        function drawDots2(time) {
-            var elapsed = (time - start2) / 1000;
-            var dotSize = 3;
-            var spacing = 20;
-            
-            ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
-            
-            for (var x = 0; x < w2; x += spacing) {
-                for (var y = 0; y < h2; y += spacing) {
-                    var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
-                    var alpha = Math.abs(noiseValue);
-                    var size = dotSize + (noiseValue * 2);
-                    
-                    if (alpha > 0.3) {
-                        ctx.globalAlpha = alpha;
-                        ctx.beginPath();
-                        ctx.arc(x, y, size, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-            }
-            ctx.globalAlpha = 1;
-        }
-
-        function render2(time) {
-            // Clear screen with transparency instead of solid black
-            ctx.clearRect(0, 0, w2, h2);
-            
-            // Draw animated dots
-            drawDots2(time);
-            
-            requestAnimationFrame(render2);
-        }
-
-        // Initialize noise and start rendering
-        noise.seed(Math.random());
-        render2();
-    }
-
-    // Initialize ElevenLabs integration
-    setTimeout(() => {
-        window.elevenLabsIntegration = new ElevenLabsVoiceIntegration();
-        console.log('ElevenLabs voice integration initialized');
-    }, 1000);
-
-    // Microphone popup functionality
-    const micButton = document.querySelector('.demo-card .play-button');
-    const micPopup = document.getElementById('mic-popup-container');
-    const closeMic = document.querySelector('.close-mic-popup');
-
-    if (micButton && micPopup && closeMic) {
-        micButton.addEventListener('click', () => {
-            micPopup.style.display = 'block';
-        });
-
-        closeMic.addEventListener('click', () => {
-            micPopup.style.display = 'none';
-        });
-
-        document.addEventListener('click', (e) => {
-            if (
-                micPopup.style.display === 'block' &&
-                !micPopup.contains(e.target) &&
-                !micButton.contains(e.target)
-            ) {
-                micPopup.style.display = 'none';
-            }
-        });
-    }
-
-   // Agent modal functionality - UPDATED FOR agent1 and agent2
-    const playButtons = document.querySelectorAll(".demo-card-grid .play-button");
-    const closeAgentBtns = document.querySelectorAll(".close-agent-popup");
-
-    const agentData = {
-        Femi: {
-            name: "Talk with Femi",
-            avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f4311fa86237e3f3ff6_femi-avatar.png"
-        },
-        Sira: {
-            name: "Talk with Sira (French)",
-            avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f43e38d06781a6ebf23_sira-avatar.png"
-        }
     };
 
-    // Handle play button clicks
-    if (playButtons.length > 0) {
-        playButtons.forEach((button, index) => {
-            button.addEventListener("click", () => {
-                const agent = index === 0 ? "Femi" : "Sira";
-                const modalId = index === 0 ? "agent1" : "agent2";
-                const modal = document.getElementById(modalId);
-                
-                if (modal) {
-                    // Update modal content
-                    const agentName = modal.querySelector('h3');
-                    const agentAvatar = modal.querySelector('.agent-avatar img');
-                    
-                    if (agentName) agentName.textContent = agentData[agent].name;
-                    if (agentAvatar) agentAvatar.src = agentData[agent].avatar;
-                    
-                    // Update description
-                    const description = modal.querySelector('.agent-description');
-                    if (description) {
-                        description.textContent = agent === "Femi" ? 
-                            "Enter your details and Femi will give you a call in English." :
-                            "Enter your details and Sira will give you a call in French.";
-                    }
-                    
-                    modal.style.display = "flex";
-                }
-            });
-        });
-    }
+    function drawSine(time, angular_freq) {
+        ctx2.beginPath();
+        ctx2.strokeStyle = "rgba(46, 151, 157, 1)";
 
-    // Handle close button clicks for both modals
-    if (closeAgentBtns.length > 0) {
-        closeAgentBtns.forEach(closeBtn => {
-            closeBtn.addEventListener("click", () => {
-                // Close both modals
-                const agent1Modal = document.getElementById("agent1");
-                const agent2Modal = document.getElementById("agent2");
-                
-                if (agent1Modal) agent1Modal.style.display = "none";
-                if (agent2Modal) agent2Modal.style.display = "none";
-            });
-        });
-    }
+        var elapsed = (time - start) / 1000;
+        var phase_angle = elapsed * 2;
 
-    // Click outside to close modals
-    document.addEventListener('click', (e) => {
-        const agent1Modal = document.getElementById("agent1");
-        const agent2Modal = document.getElementById("agent2");
-        
-        // Close agent1 modal if clicking outside
-        if (agent1Modal && agent1Modal.style.display === 'flex' && 
-            !agent1Modal.querySelector('.agent-popup').contains(e.target)) {
-            agent1Modal.style.display = 'none';
+        var x, y, amplitude;
+        for (x = 0; x < w; x++) {
+            amplitude = noise.perlin2(x / 100, elapsed) * 200;
+            amplitude *= Math.sin(x * 2) * 3;
+            y = amplitude * Math.sin(x * angular_freq + phase_angle);
+            ctx2.lineTo(x, y + h / 2);
         }
-        
-        // Close agent2 modal if clicking outside
-        if (agent2Modal && agent2Modal.style.display === 'flex' && 
-            !agent2Modal.querySelector('.agent-popup').contains(e.target)) {
-            agent2Modal.style.display = 'none';
+
+        ctx2.stroke();
+        ctx2.closePath();
+    }
+
+    function drawDots(time) {
+        var elapsed = (time - start) / 1000;
+        var dotSize = 3;
+        var spacing = 20;
+
+        ctx2.fillStyle = "rgba(46, 151, 157, 0.6)";
+
+        for (var x = 0; x < w; x += spacing) {
+            for (var y = 0; y < h; y += spacing) {
+                var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
+                var alpha = Math.abs(noiseValue);
+                var size = dotSize + (noiseValue * 2);
+
+                if (alpha > 0.3) {
+                    ctx2.globalAlpha = alpha;
+                    ctx2.beginPath();
+                    ctx2.arc(x, y, size, 0, Math.PI * 2);
+                    ctx2.fill();
+                }
+            }
+        }
+        ctx2.globalAlpha = 1;
+    }
+
+    function render(time) {
+        // Clear screen with transparency instead of solid black
+        ctx2.clearRect(0, 0, w, h);
+
+        // Draw animated dots
+        drawDots(time);
+
+        // Draw sine wave
+        drawSine(time, 10);
+
+        requestAnimationFrame(render);
+    }
+
+    // Initialize noise and start rendering
+    noise.seed(Math.random());
+    render();
+}
+
+// Second canvas animation (dots only)
+const canvas = document.getElementById("canvas");
+if (canvas) {
+    var w2 = window.innerWidth;
+    var h2 = window.innerHeight;
+
+    var ctx = canvas.getContext("2d");
+    ctx.canvas.width = w2;
+    ctx.canvas.height = h2;
+
+    var start2 = performance.now();
+
+    window.addEventListener('resize', function () {
+        w2 = window.innerWidth;
+        h2 = window.innerHeight;
+        ctx.canvas.width = w2;
+        ctx.canvas.height = h2;
+    });
+
+    function drawDots2(time) {
+        var elapsed = (time - start2) / 1000;
+        var dotSize = 3;
+        var spacing = 20;
+
+        ctx.fillStyle = "rgba(46, 151, 157, 0.6)";
+
+        for (var x = 0; x < w2; x += spacing) {
+            for (var y = 0; y < h2; y += spacing) {
+                var noiseValue = noise.perlin3(x / 100, y / 100, elapsed * 0.5);
+                var alpha = Math.abs(noiseValue);
+                var size = dotSize + (noiseValue * 2);
+
+                if (alpha > 0.3) {
+                    ctx.globalAlpha = alpha;
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    function render2(time) {
+        // Clear screen with transparency instead of solid black
+        ctx.clearRect(0, 0, w2, h2);
+
+        // Draw animated dots
+        drawDots2(time);
+
+        requestAnimationFrame(render2);
+    }
+
+    // Initialize noise and start rendering
+    noise.seed(Math.random());
+    render2();
+}
+
+// Initialize ElevenLabs integration
+setTimeout(() => {
+    window.elevenLabsIntegration = new ElevenLabsVoiceIntegration();
+    console.log('ElevenLabs voice integration initialized');
+}, 1000);
+
+// Microphone popup functionality
+const micButton = document.querySelector('.demo-card .play-button');
+const micPopup = document.getElementById('mic-popup-container');
+const closeMic = document.querySelector('.close-mic-popup');
+
+if (micButton && micPopup && closeMic) {
+    micButton.addEventListener('click', () => {
+        micPopup.style.display = 'block';
+    });
+
+    closeMic.addEventListener('click', () => {
+        micPopup.style.display = 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (
+            micPopup.style.display === 'block' &&
+            !micPopup.contains(e.target) &&
+            !micButton.contains(e.target)
+        ) {
+            micPopup.style.display = 'none';
         }
     });
+}
+
+// Agent modal functionality - UPDATED FOR agent1 and agent2
+const playButtons = document.querySelectorAll(".demo-card-grid .play-button");
+const closeAgentBtns = document.querySelectorAll(".close-agent-popup");
+
+const agentData = {
+    Femi: {
+        name: "Talk with Femi",
+        avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f4311fa86237e3f3ff6_femi-avatar.png"
+    },
+    Sira: {
+        name: "Talk with Sira (French)",
+        avatar: "https://cdn.prod.website-files.com/682af872a46d07cc174b0724/68616f43e38d06781a6ebf23_sira-avatar.png"
+    }
+};
+
+// Handle play button clicks
+if (playButtons.length > 0) {
+    playButtons.forEach((button, index) => {
+        button.addEventListener("click", () => {
+            const agent = index === 0 ? "Femi" : "Sira";
+            const modalId = index === 0 ? "agent1" : "agent2";
+            const modal = document.getElementById(modalId);
+
+            if (modal) {
+                // Update modal content
+                const agentName = modal.querySelector('h3');
+                const agentAvatar = modal.querySelector('.agent-avatar img');
+
+                if (agentName) agentName.textContent = agentData[agent].name;
+                if (agentAvatar) agentAvatar.src = agentData[agent].avatar;
+
+                // Update description
+                const description = modal.querySelector('.agent-description');
+                if (description) {
+                    description.textContent = agent === "Femi" ?
+                        "Enter your details and Femi will give you a call in English." :
+                        "Enter your details and Sira will give you a call in French.";
+                }
+
+                modal.style.display = "flex";
+            }
+        });
+    });
+}
+
+// Handle close button clicks for both modals
+if (closeAgentBtns.length > 0) {
+    closeAgentBtns.forEach(closeBtn => {
+        closeBtn.addEventListener("click", () => {
+            // Close both modals
+            const agent1Modal = document.getElementById("agent1");
+            const agent2Modal = document.getElementById("agent2");
+
+            if (agent1Modal) agent1Modal.style.display = "none";
+            if (agent2Modal) agent2Modal.style.display = "none";
+        });
+    });
+}
+
+// Click outside to close modals
+document.addEventListener('click', (e) => {
+    const agent1Modal = document.getElementById("agent1");
+    const agent2Modal = document.getElementById("agent2");
+
+    // Close agent1 modal if clicking outside
+    if (agent1Modal && agent1Modal.style.display === 'flex' &&
+        !agent1Modal.querySelector('.agent-popup').contains(e.target)) {
+        agent1Modal.style.display = 'none';
+    }
+
+    // Close agent2 modal if clicking outside
+    if (agent2Modal && agent2Modal.style.display === 'flex' &&
+        !agent2Modal.querySelector('.agent-popup').contains(e.target)) {
+        agent2Modal.style.display = 'none';
+    }
+});
 
 // Essential Phone Validation and Call Code - Append to your existing JS
 // Essential Phone Validation and Call Code - Replace your existing calling code with this
@@ -676,12 +677,12 @@ async function initiateCall(callData) {
 // Enhanced phone number formatting with international support
 function formatPhoneInput(input) {
     let value = input.value.replace(/\D/g, '');
-    
+
     // Auto-add country code for US numbers
     if (value.length > 0 && !value.startsWith('1') && value.length === 10) {
         value = '1' + value;
     }
-    
+
     // Format based on length
     if (value.length >= 11) {
         input.value = value.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1 ($2) $3-$4');
@@ -690,7 +691,7 @@ function formatPhoneInput(input) {
     } else if (value.length >= 4) {
         input.value = value.replace(/(\d{3})(\d{3})/, '($1) $2');
     }
-    
+
     return value;
 }
 
@@ -698,7 +699,7 @@ function formatPhoneInput(input) {
 function showValidationFeedback(input, result) {
     const parent = input.closest('.form-group') || input.parentElement;
     let feedback = parent.querySelector('.phone-feedback');
-    
+
     if (!feedback) {
         feedback = document.createElement('div');
         feedback.className = 'phone-feedback';
@@ -714,7 +715,7 @@ function showValidationFeedback(input, result) {
         `;
         parent.appendChild(feedback);
     }
-    
+
     if (result.valid) {
         feedback.innerHTML = `
             <span style="color: #52C41A;">✓</span>
@@ -738,7 +739,7 @@ function showValidationFeedback(input, result) {
 function showCallStatus(message, status, modalId) {
     const modal = document.getElementById(modalId);
     let statusElement = modal.querySelector('.call-status');
-    
+
     if (!statusElement) {
         statusElement = document.createElement('div');
         statusElement.className = 'call-status';
@@ -757,14 +758,14 @@ function showCallStatus(message, status, modalId) {
         const form = modal.querySelector('.agent-form');
         if (form) form.parentNode.insertBefore(statusElement, form);
     }
-    
+
     // Add loading spinner for initiated status
     if (status === 'initiated') {
         statusElement.innerHTML = `
             <div style="width: 20px; height: 20px; border: 2px solid #2e979d; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
             <span>${message}</span>
         `;
-        
+
         // Add spinner animation
         const style = document.createElement('style');
         style.textContent = `
@@ -777,10 +778,10 @@ function showCallStatus(message, status, modalId) {
     } else {
         statusElement.textContent = message;
     }
-    
+
     statusElement.className = `call-status ${status}`;
     statusElement.style.display = 'flex';
-    
+
     // Status-specific styling
     const colors = {
         'initiated': 'background: rgba(46, 151, 157, 0.1); color: #2e979d; border: 1px solid rgba(46, 151, 157, 0.3);',
@@ -825,7 +826,7 @@ async function handleCallFormSubmit(form, agent, modalId) {
     // Phone validation
     showCallStatus('Validating phone number...', 'initiated', modalId);
     const phoneValidation = await validatePhone(phone);
-    
+
     if (!phoneValidation.valid) {
         showCallStatus(`Invalid phone: ${phoneValidation.message}`, 'failed', modalId);
         return;
@@ -835,7 +836,7 @@ async function handleCallFormSubmit(form, agent, modalId) {
     const submitBtn = form.querySelector('button[type="submit"]');
     const inputs = form.querySelectorAll('input, button');
     inputs.forEach(input => input.disabled = true);
-    
+
     const originalBtnText = submitBtn.textContent;
     submitBtn.textContent = 'Calling...';
 
@@ -851,19 +852,19 @@ async function handleCallFormSubmit(form, agent, modalId) {
 
         console.log('Initiating call with data:', callData);
         const result = await initiateCall(callData);
-        
+
         showCallStatus(
-            `🎉 Call initiated! ${agent.charAt(0).toUpperCase() + agent.slice(1)} will call you at ${phoneValidation.formatted || phone} in about ${result.estimated_time || '30-60 seconds'}.`, 
-            'answered', 
+            `🎉 Call initiated! ${agent.charAt(0).toUpperCase() + agent.slice(1)} will call you at ${phoneValidation.formatted || phone} in about ${result.estimated_time || '30-60 seconds'}.`,
+            'answered',
             modalId
         );
-        
+
         // Reset form after successful call
         setTimeout(() => {
             inputs.forEach(input => input.disabled = false);
             submitBtn.textContent = originalBtnText;
             form.reset();
-            
+
             // Clear validation feedback
             const feedback = form.querySelector('.phone-feedback');
             if (feedback) feedback.remove();
@@ -872,7 +873,7 @@ async function handleCallFormSubmit(form, agent, modalId) {
     } catch (error) {
         console.error('Call failed:', error);
         showCallStatus(`Failed to connect: ${error.message}`, 'failed', modalId);
-        
+
         // Re-enable form immediately on error
         inputs.forEach(input => input.disabled = false);
         submitBtn.textContent = originalBtnText;
@@ -882,18 +883,18 @@ async function handleCallFormSubmit(form, agent, modalId) {
 // Setup phone input with enhanced formatting
 function setupPhoneInput(phoneInput) {
     let debounceTimer;
-    
+
     // Add placeholder and styling
     phoneInput.placeholder = '+1 (555) 123-4567';
     phoneInput.style.transition = 'all 0.3s ease';
-    
+
     phoneInput.addEventListener('input', (e) => {
         formatPhoneInput(e.target);
-        
+
         // Clear existing validation
         const feedback = e.target.parentElement.querySelector('.phone-feedback');
         if (feedback) feedback.remove();
-        
+
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {
             const cleaned = e.target.value.replace(/\D/g, '');
@@ -903,7 +904,7 @@ function setupPhoneInput(phoneInput) {
             }
         }, 800); // Slightly longer debounce for better UX
     });
-    
+
     // Reset styling on focus
     phoneInput.addEventListener('focus', () => {
         phoneInput.style.borderColor = '';
@@ -912,22 +913,22 @@ function setupPhoneInput(phoneInput) {
 }
 
 // Enhanced initialization for your existing modals
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Setup phone inputs in both modals
     const phoneInputs = document.querySelectorAll('#agent1 input[type="tel"], #agent2 input[type="tel"]');
     phoneInputs.forEach(setupPhoneInput);
-    
+
     // Setup form submissions with proper agent mapping
     const agent1Form = document.querySelector('#agent1 .agent-form');
     const agent2Form = document.querySelector('#agent2 .agent-form');
-    
+
     if (agent1Form) {
         agent1Form.addEventListener('submit', (e) => {
             e.preventDefault();
             handleCallFormSubmit(agent1Form, 'femi', 'agent1');
         });
     }
-    
+
     if (agent2Form) {
         agent2Form.addEventListener('submit', (e) => {
             e.preventDefault();
