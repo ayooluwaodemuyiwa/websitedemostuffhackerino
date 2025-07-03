@@ -243,7 +243,7 @@
 })(this);
 
 // Configuration
-const API_BASE_URL = 'https://triangular-poor-emulators-ayooluwa2.replit.app/'; // Replace with your Replit URL
+const API_BASE_URL = 'https://triangular-poor-emulators-ayooluwa2.replit.app'; // Replace with your Replit URL
 
 // Agent ID mapping
 const AGENT_IDS = {
