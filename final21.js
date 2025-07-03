@@ -547,7 +547,9 @@ if (micButton && micPopup && closeMic) {
 }
 
 // Agent modal functionality - UPDATED FOR agent1 and agent2
-const playButtons = document.querySelectorAll(".demo-card-grid .play-button");
+const femiButton = document.querySelector('.demo-card-grid .play-button:first-child');
+const siraButton = document.querySelector('.demo-card-grid .play-button:last-child');
+const playButtons = [femiButton, siraButton];
 const closeAgentBtns = document.querySelectorAll(".close-agent-popup");
 
 const agentData = {
