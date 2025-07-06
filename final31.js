@@ -243,12 +243,12 @@
 })(this);
 
 // Configuration
-const API_BASE_URL = "https://fastapi-project-broken-fog-6611.fly.dev"; // Replace with your Replit URL
+const API_BASE_URL = "https://fastapi-project-broken-fog-6611.fly.dev";
 
 // Agent ID mapping
 const AGENT_IDS = {
-    'femi': 'femi',  // This sends 'femi' to your backend
-    'sira': 'sira'   // This sends 'sira' to your backend
+    'femi': 'femi',
+    'sira': 'sira'
 };
 
 async function validatePhone(phoneNumber) {
@@ -281,8 +281,6 @@ async function validatePhone(phoneNumber) {
     }
 }
 
-
-// Make the call function with agent ID
 async function initiateCall(callData) {
     try {
         console.log('Sending call request to:', `${API_BASE_URL}/initiate-call`);
@@ -308,7 +306,6 @@ async function initiateCall(callData) {
                 const errorData = JSON.parse(errorText);
                 errorMessage = errorData.detail || errorMessage;
             } catch (e) {
-                // If not JSON, use the text directly
                 errorMessage = errorText || errorMessage;
             }
 
@@ -325,19 +322,14 @@ async function initiateCall(callData) {
     }
 }
 
-// Enhanced phone number formatting with better international support
 function formatPhoneInput(input) {
     let value = input.value.replace(/\D/g, '');
 
-    // Handle different international formats
     if (value.startsWith('1') && value.length === 11) {
-        // US/Canada number with country code
         input.value = value.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1 ($2) $3-$4');
     } else if (value.length === 10) {
-        // US number without country code
         input.value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
     } else if (value.length >= 7) {
-        // International or partial number
         if (value.startsWith('1')) {
             input.value = value.replace(/(\d{1})(\d{3})(\d{3})(\d{4})/, '+$1 ($2) $3-$4');
         } else {
@@ -348,7 +340,6 @@ function formatPhoneInput(input) {
     return value;
 }
 
-// Real-time validation feedback
 function showValidationFeedback(input, result) {
     const parent = input.closest('.form-group, .agent-form') || input.parentElement;
     let feedback = parent.querySelector('.phone-feedback');
@@ -388,7 +379,6 @@ function showValidationFeedback(input, result) {
     }
 }
 
-// Enhanced call status with loading states
 function showCallStatus(message, status, modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
@@ -414,14 +404,12 @@ function showCallStatus(message, status, modalId) {
         if (form) form.parentNode.insertBefore(statusElement, form);
     }
 
-    // Add loading spinner for initiated status
     if (status === 'initiated') {
         statusElement.innerHTML = `
             <div style="width: 20px; height: 20px; border: 2px solid #2e979d; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
             <span>${message}</span>
         `;
 
-        // Add spinner animation
         if (!document.getElementById('spinner-style')) {
             const style = document.createElement('style');
             style.id = 'spinner-style';
@@ -440,7 +428,6 @@ function showCallStatus(message, status, modalId) {
     statusElement.className = `call-status ${status}`;
     statusElement.style.display = 'flex';
 
-    // Status-specific styling
     const colors = {
         'initiated': 'background: rgba(46, 151, 157, 0.1); color: #2e979d; border: 1px solid rgba(46, 151, 157, 0.3);',
         'ringing': 'background: rgba(255, 193, 7, 0.1); color: #856404; border: 1px solid rgba(255, 193, 7, 0.3);',
@@ -455,11 +442,9 @@ async function handleCallFormSubmit(form, agent, modalId) {
     const email = form.querySelector('input[type="email"]').value.trim();
     const phone = form.querySelector('input[type="tel"]').value.trim();
 
-    // Clear previous status
     const existingStatus = form.parentNode.querySelector('.call-status');
     if (existingStatus) existingStatus.remove();
 
-    // Enhanced validation
     if (!name || name.length < 2) {
         showCallStatus('Please enter your full name.', 'failed', modalId);
         return;
@@ -475,14 +460,12 @@ async function handleCallFormSubmit(form, agent, modalId) {
         return;
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         showCallStatus('Please enter a valid email address.', 'failed', modalId);
         return;
     }
 
-    // Phone validation
     showCallStatus('Validating phone number...', 'initiated', modalId);
     const phoneValidation = await validatePhone(phone);
 
@@ -491,7 +474,6 @@ async function handleCallFormSubmit(form, agent, modalId) {
         return;
     }
 
-    // Disable form during call
     const submitBtn = form.querySelector('button[type="submit"]');
     const inputs = form.querySelectorAll('input, button');
     inputs.forEach(input => input.disabled = true);
@@ -518,13 +500,11 @@ async function handleCallFormSubmit(form, agent, modalId) {
             modalId
         );
 
-        // Reset form after successful call
         setTimeout(() => {
             inputs.forEach(input => input.disabled = false);
             submitBtn.textContent = originalBtnText;
             form.reset();
 
-            // Clear validation feedback
             const feedback = form.parentNode.querySelector('.phone-feedback');
             if (feedback) feedback.remove();
         }, 5000);
@@ -533,29 +513,23 @@ async function handleCallFormSubmit(form, agent, modalId) {
         console.error('Call failed:', error);
         showCallStatus(`Failed to connect: ${error.message}`, 'failed', modalId);
 
-        // Re-enable form immediately on error
         inputs.forEach(input => input.disabled = false);
         submitBtn.textContent = originalBtnText;
     }
 }
 
-
-// Setup phone input with enhanced formatting
 function setupPhoneInput(phoneInput) {
     let debounceTimer;
 
-    // Add better placeholder and styling
     phoneInput.placeholder = '+1 (555) 123-4567 or +44 20 7946 0958';
     phoneInput.style.transition = 'all 0.3s ease';
 
     phoneInput.addEventListener('input', (e) => {
         formatPhoneInput(e.target);
 
-        // Clear existing validation feedback
         const feedback = e.target.closest('.form-group, .agent-form').querySelector('.phone-feedback');
         if (feedback) feedback.remove();
 
-        // Reset input styling
         e.target.style.borderColor = '';
         e.target.style.boxShadow = '';
 
@@ -563,16 +537,14 @@ function setupPhoneInput(phoneInput) {
         debounceTimer = setTimeout(async () => {
             const phoneValue = e.target.value.trim();
 
-            // Only validate if we have a reasonable length
             if (phoneValue.length >= 10) {
                 console.log('Attempting validation for:', phoneValue);
                 const result = await validatePhone(phoneValue);
                 showValidationFeedback(phoneInput, result);
             }
-        }, 1000); // Increased debounce time
+        }, 1000);
     });
 
-    // Reset styling on focus
     phoneInput.addEventListener('focus', () => {
         phoneInput.style.borderColor = '';
         phoneInput.style.boxShadow = '';
@@ -706,19 +678,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function render(time) {
-            // Clear screen with transparency instead of solid black
             ctx2.clearRect(0, 0, w, h);
-
-            // Draw animated dots
             drawDots(time);
-
-            // Draw sine wave
             drawSine(time, 10);
-
             requestAnimationFrame(render);
         }
 
-        // Initialize noise and start rendering
         noise.seed(Math.random());
         render();
     }
@@ -767,28 +732,32 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function render2(time) {
-            // Clear screen with transparency instead of solid black
             ctx.clearRect(0, 0, w2, h2);
-
-            // Draw animated dots
             drawDots2(time);
-
             requestAnimationFrame(render2);
         }
 
-        // Initialize noise and start rendering
         noise.seed(Math.random());
         render2();
     }
 
-    // Microphone popup functionality (first button - accent demo)
-    const micButton = document.querySelector('.demo-card .play-button');
+    // ===== FIXED BUTTON HANDLING =====
+    console.log('Setting up button handlers...');
+
+    // 1. MICROPHONE BUTTON (Accent Converter Demo) - The single demo card
+    const accentDemoCard = document.querySelector('.demo-card.centered');
+    const microphoneButton = accentDemoCard ? accentDemoCard.querySelector('.play-button') : null;
     const micPopup = document.getElementById('mic-popup-container');
     const closeMic = document.querySelector('.close-mic-popup');
 
-    if (micButton && micPopup && closeMic) {
-        micButton.addEventListener('click', () => {
-            console.log('Accent demo button clicked');
+    console.log('Microphone button found:', !!microphoneButton);
+    console.log('Mic popup found:', !!micPopup);
+
+    if (microphoneButton && micPopup && closeMic) {
+        microphoneButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Microphone button clicked - opening accent converter');
             micPopup.style.display = 'block';
         });
 
@@ -800,79 +769,68 @@ document.addEventListener('DOMContentLoaded', function () {
             if (
                 micPopup.style.display === 'block' &&
                 !micPopup.contains(e.target) &&
-                !micButton.contains(e.target)
+                !microphoneButton.contains(e.target)
             ) {
                 micPopup.style.display = 'none';
             }
         });
     }
 
-    // FIXED: Agent modal functionality for Femi and Sira
-    const demoCardGrid = document.querySelector('.demo-card-grid');
+    // 2. FEMI & SIRA BUTTONS - The split demo card
+    const splitDemoCard = document.querySelector('.demo-card.split');
+    const demoCardGrid = splitDemoCard ? splitDemoCard.querySelector('.demo-card-grid') : null;
+
+    console.log('Split demo card found:', !!splitDemoCard);
+    console.log('Demo card grid found:', !!demoCardGrid);
 
     if (demoCardGrid) {
-        // Get Femi and Sira buttons specifically
-        const femiDiv = demoCardGrid.children[0]; // First div in grid
-        const siraDiv = demoCardGrid.children[1]; // Second div in grid
+        const gridDivs = demoCardGrid.children;
+        console.log('Grid divs found:', gridDivs.length);
 
+        // FEMI BUTTON (First div in grid)
+        const femiDiv = gridDivs[0];
         const femiButton = femiDiv ? femiDiv.querySelector('.play-button') : null;
-        const siraButton = siraDiv ? siraDiv.querySelector('.play-button') : null;
-
+        
+        console.log('Femi div found:', !!femiDiv);
         console.log('Femi button found:', !!femiButton);
-        console.log('Sira button found:', !!siraButton);
 
-        // Handle Femi button click
         if (femiButton) {
             femiButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Femi button clicked');
+                console.log('Femi button clicked - opening Femi modal');
                 const modal = document.getElementById('agent1');
                 if (modal) {
                     modal.style.display = 'flex';
                     modal.style.visibility = 'visible';
                     modal.style.opacity = '1';
                     modal.classList.add('show');
-                    console.log('Femi modal opened - style applied');
-
-                    // Force reflow
-                    modal.offsetHeight;
-
-                    // Debug: Check computed styles
-                    const computedStyle = window.getComputedStyle(modal);
-                    console.log('Modal display:', computedStyle.display);
-                    console.log('Modal visibility:', computedStyle.visibility);
-                    console.log('Modal opacity:', computedStyle.opacity);
-                    console.log('Modal z-index:', computedStyle.zIndex);
+                    console.log('Femi modal opened');
                 } else {
                     console.log('agent1 modal not found');
                 }
             });
         }
 
-        // Handle Sira button click
+        // SIRA BUTTON (Second div in grid)
+        const siraDiv = gridDivs[1];
+        const siraButton = siraDiv ? siraDiv.querySelector('.play-button') : null;
+
+        console.log('Sira div found:', !!siraDiv);
+        console.log('Sira button found:', !!siraButton);
+
         if (siraButton) {
             siraButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Sira button clicked');
+                console.log('Sira button clicked - opening Sira modal');
                 const modal = document.getElementById('agent2');
                 if (modal) {
                     modal.style.display = 'flex';
                     modal.style.visibility = 'visible';
                     modal.style.opacity = '1';
                     modal.classList.add('show');
-                    console.log('Sira modal opened - style applied');
-
-                    // Force reflow
-                    modal.offsetHeight;
-
-                    // Debug: Check computed styles
-                    const computedStyle = window.getComputedStyle(modal);
-                    console.log('Modal display:', computedStyle.display);
-                    console.log('Modal visibility:', computedStyle.visibility);
-                    console.log('Modal opacity:', computedStyle.opacity);
-                    console.log('Modal z-index:', computedStyle.zIndex);
+                    console.log('Sira modal opened');
                 } else {
                     console.log('agent2 modal not found');
                 }
@@ -880,13 +838,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Handle close button clicks for both modals
+    // 3. CLOSE BUTTONS for agent modals
     const closeAgentBtns = document.querySelectorAll('.close-agent-popup');
     closeAgentBtns.forEach(closeBtn => {
         closeBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Close button clicked');
+            console.log('Agent close button clicked');
             const agent1Modal = document.getElementById('agent1');
             const agent2Modal = document.getElementById('agent2');
 
@@ -905,7 +863,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Click outside to close modals
+    // Click outside to close agent modals
     document.addEventListener('click', (e) => {
         const agent1Modal = document.getElementById('agent1');
         const agent2Modal = document.getElementById('agent2');
@@ -927,6 +885,54 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // 4. BOOK A DEMO / CONTACT BUTTONS
+    const contactPopup = document.querySelector('.s-contact-popup');
+    const closeContactBtn = contactPopup ? contactPopup.querySelector('.close-this-model') : null;
+
+    console.log('Contact popup found:', !!contactPopup);
+    console.log('Close contact button found:', !!closeContactBtn);
+
+    // Handle all "Book a Demo" buttons - but EXCLUDE the agent form submit buttons
+    const bookDemoButtons = document.querySelectorAll('.btn.btn-primary');
+    console.log('Found potential demo buttons:', bookDemoButtons.length);
+
+    bookDemoButtons.forEach((button, index) => {
+        // Skip buttons that are inside agent forms (these are for call submission)
+        const isInAgentForm = button.closest('.agent-form');
+        const isSubmitButton = button.type === 'submit';
+        
+        if (!isInAgentForm && !isSubmitButton) {
+            console.log(`Setting up demo button ${index + 1}`);
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Book a Demo button clicked');
+                if (contactPopup) {
+                    contactPopup.style.display = 'flex';
+                    contactPopup.style.opacity = '1';
+                    console.log('Contact popup opened');
+                } else {
+                    console.log('Contact popup not found');
+                }
+            });
+        } else {
+            console.log(`Skipping button ${index + 1} - it's an agent form submit button`);
+        }
+    });
+
+    // Close contact popup
+    if (closeContactBtn && contactPopup) {
+        closeContactBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Contact popup close button clicked');
+            contactPopup.style.opacity = '0';
+            contactPopup.addEventListener('transitionend', function handler() {
+                contactPopup.style.display = 'none';
+                contactPopup.removeEventListener('transitionend', handler);
+            });
+        });
+    }
+
     // Setup phone inputs in both modals
     const phoneInputs = document.querySelectorAll('#agent1 input[type="tel"], #agent2 input[type="tel"]');
     phoneInputs.forEach(setupPhoneInput);
@@ -938,6 +944,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (agent1Form) {
         agent1Form.addEventListener('submit', (e) => {
             e.preventDefault();
+            console.log('Agent1 form submitted');
             handleCallFormSubmit(agent1Form, 'femi', 'agent1');
         });
     }
@@ -945,9 +952,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (agent2Form) {
         agent2Form.addEventListener('submit', (e) => {
             e.preventDefault();
+            console.log('Agent2 form submitted');
             handleCallFormSubmit(agent2Form, 'sira', 'agent2');
         });
     }
 
-    console.log('Complete voice agent system with animations initialized successfully');
+    console.log('All button handlers set up successfully');
+    console.log('Voice agent system with animations initialized successfully');
 });
