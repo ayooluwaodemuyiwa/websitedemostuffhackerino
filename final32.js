@@ -744,99 +744,33 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===== FIXED BUTTON HANDLING =====
     console.log('Setting up button handlers...');
 
-    // 1. MICROPHONE BUTTON (Accent Converter Demo) - The single demo card
-    const accentDemoCard = document.querySelector('.demo-card.centered');
-    const microphoneButton = accentDemoCard ? accentDemoCard.querySelector('.play-button') : null;
-    const micPopup = document.getElementById('mic-popup-container');
-    const closeMic = document.querySelector('.close-mic-popup');
-
-    console.log('Microphone button found:', !!microphoneButton);
-    console.log('Mic popup found:', !!micPopup);
-
-    if (microphoneButton && micPopup && closeMic) {
-        microphoneButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('Microphone button clicked - opening accent converter');
-            micPopup.style.display = 'block';
-        });
-
-        closeMic.addEventListener('click', () => {
-            micPopup.style.display = 'none';
-        });
-
-        document.addEventListener('click', (e) => {
-            if (
-                micPopup.style.display === 'block' &&
-                !micPopup.contains(e.target) &&
-                !microphoneButton.contains(e.target)
-            ) {
-                micPopup.style.display = 'none';
+    // 2. FEMI & SIRA BUTTONS - Fixed for separate cards
+    setTimeout(() => {
+        document.querySelectorAll('.demo-card').forEach((card) => {
+            const btn = card.querySelector('.play-button');
+            const text = card.textContent.toLowerCase();
+            
+            if (btn && text.includes('femi')) {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    const modal = document.getElementById('agent1');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        modal.classList.add('show');
+                    }
+                };
+            } else if (btn && text.includes('sira')) {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    const modal = document.getElementById('agent2');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        modal.classList.add('show');
+                    }
+                };
             }
         });
-    }
-
-    // 2. FEMI & SIRA BUTTONS - The split demo card
-    const splitDemoCard = document.querySelector('.demo-card.split');
-    const demoCardGrid = splitDemoCard ? splitDemoCard.querySelector('.demo-card-grid') : null;
-
-    console.log('Split demo card found:', !!splitDemoCard);
-    console.log('Demo card grid found:', !!demoCardGrid);
-
-    if (demoCardGrid) {
-        const gridDivs = demoCardGrid.children;
-        console.log('Grid divs found:', gridDivs.length);
-
-        // FEMI BUTTON (First div in grid)
-        const femiDiv = gridDivs[0];
-        const femiButton = femiDiv ? femiDiv.querySelector('.play-button') : null;
-        
-        console.log('Femi div found:', !!femiDiv);
-        console.log('Femi button found:', !!femiButton);
-
-        if (femiButton) {
-            femiButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Femi button clicked - opening Femi modal');
-                const modal = document.getElementById('agent1');
-                if (modal) {
-                    modal.style.display = 'flex';
-                    modal.style.visibility = 'visible';
-                    modal.style.opacity = '1';
-                    modal.classList.add('show');
-                    console.log('Femi modal opened');
-                } else {
-                    console.log('agent1 modal not found');
-                }
-            });
-        }
-
-        // SIRA BUTTON (Second div in grid)
-        const siraDiv = gridDivs[1];
-        const siraButton = siraDiv ? siraDiv.querySelector('.play-button') : null;
-
-        console.log('Sira div found:', !!siraDiv);
-        console.log('Sira button found:', !!siraButton);
-
-        if (siraButton) {
-            siraButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Sira button clicked - opening Sira modal');
-                const modal = document.getElementById('agent2');
-                if (modal) {
-                    modal.style.display = 'flex';
-                    modal.style.visibility = 'visible';
-                    modal.style.opacity = '1';
-                    modal.classList.add('show');
-                    console.log('Sira modal opened');
-                } else {
-                    console.log('agent2 modal not found');
-                }
-            });
-        }
-    }
+    }, 1000);
 
     // 3. CLOSE BUTTONS for agent modals
     const closeAgentBtns = document.querySelectorAll('.close-agent-popup');
@@ -844,79 +778,41 @@ document.addEventListener('DOMContentLoaded', function () {
         closeBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Agent close button clicked');
             const agent1Modal = document.getElementById('agent1');
             const agent2Modal = document.getElementById('agent2');
 
             if (agent1Modal) {
                 agent1Modal.style.display = 'none';
-                agent1Modal.style.visibility = 'hidden';
-                agent1Modal.style.opacity = '0';
                 agent1Modal.classList.remove('show');
             }
             if (agent2Modal) {
                 agent2Modal.style.display = 'none';
-                agent2Modal.style.visibility = 'hidden';
-                agent2Modal.style.opacity = '0';
                 agent2Modal.classList.remove('show');
             }
         });
-    });
-
-    // Click outside to close agent modals
-    document.addEventListener('click', (e) => {
-        const agent1Modal = document.getElementById('agent1');
-        const agent2Modal = document.getElementById('agent2');
-
-        if (agent1Modal && agent1Modal.classList.contains('show') &&
-            !agent1Modal.querySelector('.agent-popup').contains(e.target)) {
-            agent1Modal.style.display = 'none';
-            agent1Modal.style.visibility = 'hidden';
-            agent1Modal.style.opacity = '0';
-            agent1Modal.classList.remove('show');
-        }
-
-        if (agent2Modal && agent2Modal.classList.contains('show') &&
-            !agent2Modal.querySelector('.agent-popup').contains(e.target)) {
-            agent2Modal.style.display = 'none';
-            agent2Modal.style.visibility = 'hidden';
-            agent2Modal.style.opacity = '0';
-            agent2Modal.classList.remove('show');
-        }
     });
 
     // 4. BOOK A DEMO / CONTACT BUTTONS
     const contactPopup = document.querySelector('.s-contact-popup');
     const closeContactBtn = contactPopup ? contactPopup.querySelector('.close-this-model') : null;
 
-    console.log('Contact popup found:', !!contactPopup);
-    console.log('Close contact button found:', !!closeContactBtn);
-
     // Handle all "Book a Demo" buttons - but EXCLUDE the agent form submit buttons
     const bookDemoButtons = document.querySelectorAll('.btn.btn-primary');
-    console.log('Found potential demo buttons:', bookDemoButtons.length);
 
-    bookDemoButtons.forEach((button, index) => {
+    bookDemoButtons.forEach((button) => {
         // Skip buttons that are inside agent forms (these are for call submission)
         const isInAgentForm = button.closest('.agent-form');
         const isSubmitButton = button.type === 'submit';
         
         if (!isInAgentForm && !isSubmitButton) {
-            console.log(`Setting up demo button ${index + 1}`);
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Book a Demo button clicked');
                 if (contactPopup) {
                     contactPopup.style.display = 'flex';
                     contactPopup.style.opacity = '1';
-                    console.log('Contact popup opened');
-                } else {
-                    console.log('Contact popup not found');
                 }
             });
-        } else {
-            console.log(`Skipping button ${index + 1} - it's an agent form submit button`);
         }
     });
 
@@ -924,7 +820,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (closeContactBtn && contactPopup) {
         closeContactBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Contact popup close button clicked');
             contactPopup.style.opacity = '0';
             contactPopup.addEventListener('transitionend', function handler() {
                 contactPopup.style.display = 'none';
@@ -944,7 +839,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (agent1Form) {
         agent1Form.addEventListener('submit', (e) => {
             e.preventDefault();
-            console.log('Agent1 form submitted');
             handleCallFormSubmit(agent1Form, 'femi', 'agent1');
         });
     }
@@ -952,11 +846,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (agent2Form) {
         agent2Form.addEventListener('submit', (e) => {
             e.preventDefault();
-            console.log('Agent2 form submitted');
             handleCallFormSubmit(agent2Form, 'sira', 'agent2');
         });
     }
 
-    console.log('All button handlers set up successfully');
-    console.log('Voice agent system with animations initialized successfully');
+    console.log('Voice agent system initialized successfully');
 });
